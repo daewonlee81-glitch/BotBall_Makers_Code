@@ -1,0 +1,15 @@
+{
+  "name": "wombat-blocks",
+  "version": "1.0.0",
+  "description": "KIPR Wombat 로봇용 한글 블록코딩 웹앱 (블록 → Python, Wombat 직접 실행)",
+  "private": true,
+  "scripts": {
+    "build": "python3 build.py",
+    "mock": "node mock/server.js"
+  },
+  "devDependencies": {
+    "blockly": "13.4.0"
+  },
+  "license": "GPL-3.0-only",
+  "author": "KISS Institute for Practical Robotics (KIPR) <https://www.kipr.org/>"
+}

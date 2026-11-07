@@ -1,0 +1,25 @@
+웜뱃 블록코딩 (Wombat Blocks)
+Copyright (C) 2026 KISS Institute for Practical Robotics (KIPR) — https://www.kipr.org/
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, version 3 (GPL-3.0-only), the same license KIPR uses for libkipr,
+the KIPR Simulator, Voldigate and Wombat OS. See the LICENSE file.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+------------------------------------------------------------------------------
+Third-party software bundled in index.html
+
+Blockly 13.4.0 — Copyright Google LLC
+Licensed under the Apache License, Version 2.0
+https://github.com/google/blockly  ·  https://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------
+Trademarks
+
+BOTBALL®, BOTGUY™ and the BOTGUY™ design and character are trademarks and/or
+service marks of KISS Institute for Practical Robotics. iRobot® and iRobot
+Create® are registered marks of their respective owners.

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<!--
+  웜뱃 블록코딩 (Wombat Blocks)
+  Copyright (C) 2026 KISS Institute for Practical Robotics (KIPR) — https://www.kipr.org/
+  License: GPL-3.0-only (see LICENSE). Bundled Blockly: Apache-2.0, Google LLC.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>웜뱃 블록코딩 · KIPR Wombat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213d; --ink2:#3d4a66; --mute:#7a8499; --line:#e3e6ee; --bg:#f6f7fb; --card:#fff;
+    --accent:#f26b1d; --accent2:#ffb703; --ok:#2a9d8f;
+    --code-bg:#0f1729; --code-fg:#dbe4ff; --code-line:#4b5675;
+    --kw:#c792ea; --str:#c3e88d; --num:#f78c6c; --com:#6b7a99; --kipr:#ffcb6b; --fn:#82aaff;
+    --header-h:58px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
+  button,input,select{font-family:inherit}
+  header{height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--ink);color:#fff;position:relative;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand svg{flex:none}
+  .brand h1{margin:0;font-size:18px;font-weight:900;letter-spacing:-.3px;white-space:nowrap}
+  .brand small{display:block;font-size:11px;font-weight:500;color:#aab4cc;letter-spacing:.2px;margin-top:-2px}
+  .proj{display:flex;align-items:center;gap:6px;margin-left:8px}
+  .proj input{width:170px;height:32px;border-radius:8px;border:1px solid #33415e;background:#1d2b4b;color:#fff;padding:0 10px;font-size:13px}
+  .proj input:focus{outline:2px solid var(--accent2);outline-offset:0}
+  .spacer{flex:1}
+  .tb{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+  .btn{height:34px;padding:0 12px;border-radius:9px;border:1px solid #33415e;background:#1d2b4b;color:#e8edf8;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .btn:hover{background:#28385d}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+  .btn.primary:hover{background:#ff7d31}
+  .btn svg{width:16px;height:16px}
+  .menu{position:relative}
+  .menu-list{position:absolute;top:40px;right:0;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(20,33,61,.18);padding:6px;min-width:260px;display:none;z-index:50}
+  .menu.open .menu-list{display:block}
+  .menu-list button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;font-size:13.5px;cursor:pointer;color:var(--ink)}
+  .menu-list button:hover{background:#fff3ea}
+  .menu-list button b{display:block;font-weight:700}
+  .menu-list button span{display:block;font-size:12px;color:var(--mute);margin-top:1px}
+  main{position:absolute;top:var(--header-h);left:0;right:0;bottom:0;display:flex}
+  #blocklyArea{flex:1;position:relative;min-width:240px}
+  #blocklyDiv{position:absolute;inset:0}
+  #splitter{width:7px;cursor:col-resize;background:var(--line);position:relative;flex:none}
+  #splitter::after{content:"";position:absolute;top:50%;left:2px;width:3px;height:36px;margin-top:-18px;border-radius:2px;background:#b9c0d0}
+  #splitter:hover,#splitter.drag{background:var(--accent2)}
+  #panel{width:40%;min-width:280px;max-width:75%;display:flex;flex-direction:column;background:var(--code-bg);flex:none}
+  .tabs{display:flex;align-items:center;gap:2px;padding:8px 10px 0;background:#0b1222}
+  .tab{border:0;background:none;color:#8d98b5;font-size:13px;font-weight:700;padding:9px 14px;border-radius:9px 9px 0 0;cursor:pointer}
+  .tab.on{background:var(--code-bg);color:#fff}
+  .tabs .spacer{flex:1}
+  .mini{height:28px;padding:0 10px;border-radius:7px;border:1px solid #2b3755;background:#16213b;color:#cfd8f0;font-size:12px;cursor:pointer;margin-bottom:6px;display:inline-flex;align-items:center;gap:5px}
+  .mini:hover{background:#21304f}
+  .view{flex:1;overflow:auto;display:none}
+  .view.on{display:block}
+  #codeView{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13.5px;line-height:1.65;color:var(--code-fg);padding:14px 0 40px}
+  #codeView .ln{display:flex;white-space:pre}
+  #codeView .ln i{font-style:normal;color:var(--code-line);width:3.2em;text-align:right;padding-right:1.1em;flex:none;user-select:none}
+  #codeView .ln code{font-family:inherit;white-space:pre}
+  .t-kw{color:var(--kw)} .t-str{color:var(--str)} .t-num{color:var(--num)} .t-com{color:var(--com);font-style:italic}
+  .t-kipr{color:var(--kipr);font-weight:600} .t-fn{color:var(--fn)}
+  #helpView{background:#fff;color:var(--ink);padding:20px 22px 40px;font-size:14px;line-height:1.7}
+  #helpView h2{font-size:17px;margin:4px 0 10px}
+  #helpView h3{font-size:14.5px;margin:22px 0 6px;color:var(--ink2)}
+  #helpView ol{padding-left:20px;margin:6px 0}
+  #helpView li{margin:4px 0}
+  #helpView code{font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#f1f3f8;padding:1px 6px;border-radius:5px}
+  #helpView table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+  #helpView th,#helpView td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  #helpView th{background:#f6f7fb;font-weight:700}
+  .note{background:#fff7e6;border:1px solid #ffe2a8;border-radius:10px;padding:10px 12px;margin:12px 0;font-size:13px}
+  .status{font-size:12px;color:#8d98b5;padding:6px 14px;border-top:1px solid #1b2642;display:flex;gap:12px;align-items:center;background:#0b1222}
+  .status .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 10px 28px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #loadErr{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#fff;font-size:15px;color:var(--ink2);text-align:center;padding:30px;z-index:5}
+  /* Blockly tweaks */
+  .blocklyToolboxDiv,.blocklyToolbox{background:#fff !important;border-right:1px solid var(--line)}
+  .blocklyTreeRow,.blocklyToolboxCategory{border-radius:8px;margin:2px 6px !important;height:34px !important;line-height:34px !important}
+  .blocklyTreeLabel,.blocklyToolboxCategoryLabel{font-family:"Noto Sans KR",sans-serif !important;font-size:13.5px !important;font-weight:500;color:var(--ink) !important}
+  .blocklyTreeSelected .blocklyTreeLabel,.blocklyToolboxSelected .blocklyToolboxCategoryLabel{color:#fff !important}
+  .blocklyText,.blocklyFlyoutLabelText,.blocklyHtmlInput{font-family:"Noto Sans KR",sans-serif !important}
+  .blocklyMainBackground{stroke:none !important}
+  /* Wombat 연결 */
+  .btn .cdot{width:9px;height:9px;border-radius:50%;background:#6b7a99;flex:none}
+  .btn.connected .cdot{background:#3ddc97;box-shadow:0 0 0 3px rgba(61,220,151,.25)}
+  .btn.run{background:#2a9d8f;border-color:#2a9d8f;color:#fff;font-weight:700}
+  .btn.run:hover{background:#33b3a3}
+  .btn.stop{background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700}
+  .btn.stop:hover{background:#d64535}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .modal{position:fixed;inset:0;background:rgba(10,18,36,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+  .modal[hidden]{display:none}
+  .dlg{background:#fff;border-radius:16px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:22px 24px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .dlg h2{margin:0 0 4px;font-size:19px}
+  .dlg .sub{margin:0 0 14px;color:var(--ink2);font-size:13.5px;line-height:1.6}
+  .dlg label{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);margin:14px 0 5px}
+  .dlg input,.dlg select{height:38px;border:1px solid #cfd5e1;border-radius:9px;padding:0 10px;font-size:14px;width:100%;background:#fff;color:var(--ink)}
+  .dlg input:focus,.dlg select:focus{outline:2px solid var(--accent2);outline-offset:0;border-color:transparent}
+  .dlg .row{display:flex;gap:8px;align-items:center}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{border:1px solid #cfd5e1;background:#f6f7fb;border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;color:var(--ink2)}
+  .chip:hover{background:#fff3ea;border-color:#ffc9a3}
+  .chip.on{background:#fff3ea;border-color:var(--accent);color:var(--ink);font-weight:700}
+  .dlg .row input.ip{flex:1}
+  .dlg .row input.port{width:84px;flex:none}
+  .dlg .dbtn{height:38px;padding:0 14px;border-radius:9px;border:1px solid #cfd5e1;background:#f6f7fb;color:var(--ink);font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .dlg .dbtn:hover{background:#eceff6}
+  .dlg .dbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .dlg .dbtn:disabled{opacity:.45;cursor:not-allowed}
+  .dlg .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .dlg .hint{font-size:12.5px;color:var(--mute);margin-top:12px;line-height:1.6}
+  .msg{font-size:13px;margin-top:10px;padding:9px 11px;border-radius:9px;line-height:1.55;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:#e7f7f2;color:#11634f}
+  .msg.err{background:#fdecea;color:#9b2c20}
+  .msg.info{background:#eef3fd;color:#2c4a86}
+  #consoleView{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;line-height:1.6;color:#dbe4ff;padding:0 0 30px}
+  .cbar{position:sticky;top:0;display:flex;gap:6px;align-items:center;padding:8px 12px;background:var(--code-bg);border-bottom:1px solid #1b2642}
+  .cbar .target{font-family:"Noto Sans KR",sans-serif;font-size:12px;color:#8d98b5;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cbar .mini{margin:0}
+  #consoleOut{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+  #consoleOut .c-sys{color:#8fb3ff;font-family:"Noto Sans KR",sans-serif}
+  #consoleOut .c-ok{color:#3ddc97;font-family:"Noto Sans KR",sans-serif}
+  #consoleOut .c-err{color:#ff8a80}
+  #consoleOut .c-dim{color:#6b7a99}
+  .tab .badge{display:inline-block;width:7px;height:7px;border-radius:50%;background:#3ddc97;margin-left:6px;vertical-align:middle;visibility:hidden}
+  .tab.live .badge{visibility:visible;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  @media (max-width: 1320px){ .brand small{display:none} .btn .lbl.sec{display:none} .proj input{width:130px} }
+  .narrow-toggle{display:none}
+  @media (max-width: 900px){
+    .brand small,.proj{display:none}
+    .btn .lbl{display:none}
+    main{flex-direction:column}
+    #splitter{display:none}
+    #panel{width:100% !important;max-width:none;height:42%;min-width:0}
+    #blocklyArea{min-height:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="4" y="10" width="56" height="44" rx="12" fill="#f26b1d"/>
+      <rect x="11" y="17" width="42" height="24" rx="5" fill="#14213d"/>
+      <circle cx="24" cy="29" r="4" fill="#ffb703"/><circle cx="40" cy="29" r="4" fill="#ffb703"/>
+      <rect x="14" y="45" width="8" height="5" rx="2" fill="#14213d"/><rect x="28" y="45" width="8" height="5" rx="2" fill="#14213d"/><rect x="42" y="45" width="8" height="5" rx="2" fill="#14213d"/>
+    </svg>
+    <div><h1>웜뱃 블록코딩</h1><small>KIPR Wombat · 블록 → Python</small></div>
+  </div>
+  <div class="proj"><input id="projName" value="내_웜뱃_프로그램" aria-label="프로젝트 이름" maxlength="40"></div>
+  <div class="spacer"></div>
+  <div class="tb">
+    <button class="btn" id="btnNew" title="새 프로젝트"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span class="lbl sec">새로 만들기</span></button>
+    <div class="menu" id="exMenu">
+      <button class="btn" id="btnEx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM8 7h6"/></svg><span class="lbl sec">예제</span></button>
+      <div class="menu-list" id="exList"></div>
+    </div>
+    <button class="btn" id="btnOpen" title="프로젝트 파일(.json) 불러오기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg><span class="lbl sec">불러오기</span></button>
+    <button class="btn" id="btnSave" title="프로젝트 파일(.json) 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7"/></svg><span class="lbl sec">저장</span></button>
+    <button class="btn" id="btnPy" title="Python 파일(.py) 내려받기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg><span class="lbl sec">.py 받기</span></button>
+    <button class="btn" id="btnConn" title="Wombat 로봇 연결 설정"><span class="cdot"></span><span class="lbl" id="connLbl">Wombat 연결</span></button>
+    <button class="btn run" id="btnRun" title="Wombat으로 보내고 실행 (Ctrl+Enter)" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg><span class="lbl">실행</span></button>
+    <button class="btn stop" id="btnStop" title="실행 중인 프로그램 정지 (모든 모터 꺼짐)" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg><span class="lbl">정지</span></button>
+    <button class="btn primary" id="btnCopy" title="Python 코드 복사"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span class="lbl sec">코드 복사</span></button>
+  </div>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden>
+</header>
+
+<main>
+  <div id="blocklyArea"><div id="blocklyDiv"></div><div id="loadErr">블록 편집기를 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 새로고침해 주세요.</div></div>
+  <div id="splitter" role="separator" aria-orientation="vertical" title="드래그해서 크기 조절"></div>
+  <section id="panel">
+    <div class="tabs">
+      <button class="tab on" data-view="codeView">🐍 Python 코드</button>
+      <button class="tab" data-view="consoleView" id="tabConsole">🖥 실행 결과<span class="badge"></span></button>
+      <button class="tab" data-view="helpView">📘 연결·도움말</button>
+      <div class="spacer"></div>
+      <button class="mini" id="btnFontDown" title="글자 작게">A−</button>
+      <button class="mini" id="btnFontUp" title="글자 크게">A+</button>
+    </div>
+    <div class="view on" id="codeView" aria-label="생성된 Python 코드"></div>
+    <div class="view" id="consoleView" aria-label="Wombat 실행 결과">
+      <div class="cbar"><span class="target" id="consoleTarget">연결된 Wombat 없음</span>
+        <button class="mini" id="btnSendOnly" title="main.py 저장과 문법 검사만 하고 실행하지 않음" disabled>⬆ 보내기만</button>
+        <button class="mini" id="btnClearConsole">지우기</button></div>
+      <div id="consoleOut"><span class="c-dim">상단의 [Wombat 연결]에서 로봇을 연결한 뒤 [▶ 실행]을 누르면 Wombat의 출력이 여기에 표시됩니다.</span></div>
+    </div>
+    <div class="view" id="helpView">
+      <h2>1. Wombat과 컴퓨터 연결하기</h2>
+      <p style="margin:0 0 6px">둘 중 한 가지 방법을 고르세요. 어느 쪽이든 Wombat 화면의 <b>About(정보)</b>에서 접속 정보를 확인합니다.</p>
+      <table>
+        <tr><th style="width:24%">방법</th><th>하는 법</th></tr>
+        <tr><td><b>Wi‑Fi</b></td><td>About의 <b>SSID·Password</b>로 컴퓨터를 Wombat Wi‑Fi에 연결합니다. "인터넷 없음" 표시는 정상입니다. 주소는 About의 <b>WiFi</b> 줄 IP(보통 <code>192.168.125.1</code>)입니다.</td></tr>
+        <tr><td><b>유선(이더넷)</b></td><td>About에서 <b>Event Mode</b>를 먼저 켜고 랜선으로 컴퓨터와 Wombat을 바로 연결합니다(랜 포트가 없으면 USB‑이더넷 어댑터). 주소는 About의 <b>LAN</b> 줄 IP이며, 직접 연결하면 보통 <code>192.168.124.1</code>입니다. 0.0.0.0이면 홈 화면에 갔다가 다시 About으로 들어오세요. 한 번에 한 명만 연결됩니다.</td></tr>
+      </table>
+      <div class="note">WiFi 줄이 비어 있으면 예전 WombatOS의 문제입니다. Wombat을 최신 버전으로 업데이트하세요. 이 웹앱의 바로 실행 기능도 최신 WombatOS(KIPR Software Suite) 기준으로 만들었습니다.</div>
+
+      <h2 style="margin-top:22px">2. 이 웹앱에서 바로 실행하기</h2>
+      <ol>
+        <li>처음 한 번만, 크롬에서 <code>Wombat 주소:8888</code>로 <b>KIPR Software Suite</b>를 열고 사용자를 만든 뒤 언어를 <b>Python</b>으로 골라 프로젝트를 만듭니다.</li>
+        <li><b>내려받은 웹앱 HTML 파일</b>을 같은 컴퓨터의 크롬에서 엽니다. (claude.ai에 게시된 페이지에서는 보안 정책 때문에 로봇에 접속할 수 없습니다.)</li>
+        <li>상단 <b>Wombat 연결</b> → 주소 입력 → <b>연결 확인</b> → 사용자와 Python 프로젝트를 고르고 <b>이 프로젝트로 연결</b>을 누릅니다. 크롬이 "로컬 네트워크 기기 접근"을 물으면 <b>허용</b>하세요.</li>
+        <li><b>▶ 실행</b>(Ctrl+Enter)을 누르면 코드가 프로젝트의 <code>src/main.py</code>에 저장되고, 문법 검사 후 실행됩니다. 출력은 <b>실행 결과</b> 탭에 실시간으로 나옵니다.</li>
+        <li><b>■ 정지</b>를 누르면 프로그램이 멈추고 모든 모터가 꺼집니다.</li>
+      </ol>
+      <div class="note">🌐 Wombat Wi‑Fi에는 인터넷이 없어서, 접속하는 동안 컴퓨터의 인터넷이 끊깁니다. 이 웹앱 파일은 필요한 것을 모두 담고 있어 <b>인터넷 없이도</b> 열리고 동작합니다.<br>인터넷도 함께 쓰려면 Wombat은 <b>랜선</b>, 인터넷은 학교 Wi‑Fi로 연결하세요. 이때 인터넷이 안 되면 컴퓨터의 유선 랜 설정에서 IP를 <b>수동</b>으로 <code>192.168.124.10</code>, 서브넷 <code>255.255.255.0</code>으로 넣고 <b>게이트웨이는 비워 두세요</b>. (Wombat이 자신을 기본 게이트웨이로 알려 주기 때문에 인터넷 요청이 Wombat 쪽으로 가는 경우가 있습니다.)</div>
+      <div class="note">⚠️ 연결한 프로젝트의 <code>main.py</code>는 이 웹앱의 코드로 <b>덮어써집니다</b>. 손으로 작성한 코드가 있는 프로젝트 말고, 블록코딩용 프로젝트를 따로 만들어 연결하세요.</div>
+
+      <h2 style="margin-top:22px">3. 연결 없이 쓰기 (코드 복사)</h2>
+      <ol>
+        <li>Software Suite에서 Python 프로젝트를 엽니다.</li>
+        <li>이 화면의 <b>코드 복사</b>를 누르고, 편집기의 기존 내용을 모두 지운 뒤 붙여넣고 저장합니다.</li>
+        <li>Software Suite에서 실행하거나, Wombat 화면의 <b>Programs</b>에서 프로젝트를 골라 <b>Run</b>을 누릅니다.</li>
+      </ol>
+      <div class="note">⚠️ 바퀴가 바닥에 닿지 않게 로봇을 들어 올린 상태로 첫 실행을 해 보세요. 서보는 0이나 2047처럼 끝 값까지 보내면 무리가 갈 수 있으니 실제로 움직이는 범위 안에서 사용하세요.</div>
+      <h3>포트 번호 안내</h3>
+      <table>
+        <tr><th>장치</th><th>포트</th><th>값의 범위</th></tr>
+        <tr><td>모터</td><td>0 ~ 3</td><td>속도 −100 ~ 100 %, mav/mtp 속도 −1500 ~ 1500 틱/초 (약 1500틱 = 1바퀴)</td></tr>
+        <tr><td>서보</td><td>0 ~ 3</td><td>위치 0 ~ 2047 (사용 전 <b>서보 켜기</b> 필요)</td></tr>
+        <tr><td>아날로그 센서</td><td>0 ~ 5</td><td>0 ~ 4095 (빛·거리(ET) 센서 등)</td></tr>
+        <tr><td>디지털 센서</td><td>0 ~ 9</td><td>0 또는 1 (터치 센서 등)</td></tr>
+      </table>
+      <h3>블록과 KIPR 함수</h3>
+      <table>
+        <tr><th>블록</th><th>Python 함수 (libkipr)</th></tr>
+        <tr><td>모터 회전 / 파워</td><td><code>motor(p, %)</code> · <code>motor_power(p, %)</code></td></tr>
+        <tr><td>틱 단위 속도·위치 이동</td><td><code>mav</code> · <code>mtp</code> · <code>mrp</code> · <code>bmd</code> · <code>gmpc</code> · <code>cmpc</code></td></tr>
+        <tr><td>모터 정지</td><td><code>off(p)</code> · <code>freeze(p)</code> · <code>ao()</code></td></tr>
+        <tr><td>서보</td><td><code>enable_servos()</code> · <code>set_servo_position(p, v)</code> · <code>get_servo_position(p)</code></td></tr>
+        <tr><td>센서</td><td><code>analog(p)</code> · <code>digital(p)</code> · <code>accel_x()</code> · <code>gyro_z()</code> · <code>power_level()</code></td></tr>
+        <tr><td>버튼</td><td><code>a_button()</code> · <code>wait_for_a_button()</code> · <code>wait_for_touch(p)</code></td></tr>
+        <tr><td>시간</td><td><code>msleep(ms)</code> · <code>seconds()</code></td></tr>
+        <tr><td>봇볼 경기</td><td><code>wait_for_light(p)</code> · <code>shut_down_in(초)</code></td></tr>
+        <tr><td>카메라</td><td><code>camera_open_black()</code> · <code>camera_update()</code> · <code>get_object_count(ch)</code> · <code>get_object_center(ch, i)</code></td></tr>
+        <tr><td>iRobot Create 3</td><td><code>create3_connect()</code> · <code>create3_drive_straight(m, m/s)</code> · <code>create3_rotate_degrees(도, 도/초)</code> · <code>create3_wait()</code></td></tr>
+        <tr><td>iRobot Create (구형)</td><td><code>create_connect()</code> · <code>create_drive_direct(왼, 오)</code> · <code>get_create_lbump()</code></td></tr>
+      </table>
+      <div class="note">생성되는 코드는 KIPR Software Suite의 Python 템플릿(<code>from kipr import *</code>)을 따릅니다. 함수 설명 원문: <a href="https://www.kipr.org/doc/index.html">kipr.org/doc</a></div>
+      <p style="font-size:12px;color:var(--mute);margin-top:18px">© 2026 KISS Institute for Practical Robotics (KIPR) · <a href="https://www.kipr.org/">kipr.org</a> · GPL-3.0 · 포함된 Blockly는 Apache-2.0 (Google LLC)</p>
+    </div>
+    <div class="status"><span><span class="dot"></span><span id="stat">준비됨</span></span><span class="spacer" style="flex:1"></span><span id="lineCount"></span></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="connModal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="connTitle">
+    <h2 id="connTitle">🤖 Wombat 연결</h2>
+    <p class="sub">컴퓨터를 Wombat의 Wi‑Fi(또는 랜선)에 먼저 연결하세요. 주소는 Wombat 화면 <b>About</b>의 WiFi/LAN 줄에 나옵니다.</p>
+    <div class="msg info" id="artifactNote">claude.ai에 게시된 페이지에서는 보안 정책 때문에 로봇에 직접 접속할 수 없습니다. 아래 버튼으로 웹앱 파일을 내려받아 <b>크롬에서 열면</b> 바로 실행 기능을 쓸 수 있습니다.<br><button class="dbtn primary" id="btnGetHtml" style="margin-top:10px">웹앱 HTML 파일 내려받기</button></div>
+    <label for="ipIn">Wombat 주소</label>
+    <div class="quick"><button class="chip" data-ip="192.168.125.1">📶 Wi‑Fi · 192.168.125.1</button><button class="chip" data-ip="192.168.124.1">🔌 랜선 직접 연결 · 192.168.124.1</button></div>
+    <div class="row"><input class="ip" id="ipIn" value="192.168.125.1" inputmode="decimal" autocomplete="off" spellcheck="false"><span>:</span><input class="port" id="portIn" value="8888" inputmode="numeric"><button class="dbtn" id="btnTest">연결 확인</button></div>
+    <div class="msg" id="connMsg"></div>
+    <label for="userSel">사용자</label>
+    <select id="userSel" disabled><option>먼저 연결 확인을 누르세요</option></select>
+    <label for="projSel">Python 프로젝트</label>
+    <select id="projSel" disabled><option>-</option></select>
+    <div class="hint">선택한 프로젝트의 <b>src/main.py</b>가 이 웹앱의 코드로 덮어써집니다. 프로젝트가 없으면 KIPR Software Suite(주소:8888)에서 언어를 <b>Python</b>으로 골라 새 프로젝트를 먼저 만드세요.</div>
+    <div class="actions"><button class="dbtn" id="btnDisconnect">연결 해제</button><span style="flex:1"></span><button class="dbtn" id="btnConnClose">닫기</button><button class="dbtn primary" id="btnConnOk" disabled>이 프로젝트로 연결</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.4.0/blockly_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.4.0/blocks_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.4.0/python_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.4.0/msg/ko.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const toastEl = $('#toast');
+let toastT;
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>toastEl.classList.remove('show'), 2600); }
+
+if (!window.Blockly || !window.python) { $('#loadErr').style.display = 'flex'; return; }
+
+const P = python.pythonGenerator;
+const O = python.Order;
+P.INDENT = '    ';
+// Python 3는 한글 변수·함수 이름을 허용 → 한글 이름을 그대로 사용 (기본값은 _EC_B9.. 형태로 바뀜)
+const _origSafeName = Blockly.Names.prototype.safeName;
+Blockly.Names.prototype.safeName = function(name){
+  if (!name) return _origSafeName.call(this, name);
+  let n = name.replace(/ /g, '_').replace(/[^\p{L}\p{N}_]/gu, '_');
+  if (/^\p{N}/u.test(n)) n = 'my_' + n;
+  return n;
+};
+
+/* ---------- 공통 도우미 ---------- */
+const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push([String(i), String(i)]); return r; };
+const MOTOR = range(0, 3), SERVO = range(0, 3), ANALOG = range(0, 5), DIGITAL = range(0, 9);
+const C = { start:'#f26b1d', motor:'#e76f51', servo:'#9b5de5', sensor:'#2b8fd6', button:'#d4a017', time:'#2a9d8f', screen:'#e5508a', camera:'#c0392b', c3:'#118ab2', create:'#5c7cfa', botball:'#f26b1d' };
+const port = (name, opts) => ({ type:'field_dropdown', name, options:opts });
+const num = name => ({ type:'input_value', name, check:'Number' });
+// KIPR(C) 함수는 정수 인자를 요구 → 숫자 리터럴이 아니면 int()로 감싼다
+const intArg = code => /^-?\d+$/.test(code) ? code : `int(${code})`;
+const v = (b, name, order = O.NONE, dflt = '0') => P.valueToCode(b, name, order) || dflt;
+const vi = (b, name) => intArg(v(b, name));
+
+/* ---------- 블록 정의 ---------- */
+const defs = [
+  // 시작
+  { type:'wombat_start', message0:'▶ 프로그램 시작 %1 %2', args0:[{type:'input_dummy'},{type:'input_statement',name:'DO'}], colour:C.start, tooltip:'프로그램은 여기서부터 실행됩니다. (Python의 main 함수)', helpUrl:'', deletable:true },
+  { type:'wombat_wait_for_light', message0:'💡 빛 센서(아날로그 %1번)로 출발 신호 기다리기', args0:[port('PORT', ANALOG)], previousStatement:null, nextStatement:null, colour:C.botball, tooltip:'봇볼 경기용: 빛 센서 보정 후 시작 램프가 켜질 때까지 기다립니다. wait_for_light(port)' },
+  { type:'wombat_shut_down_in', message0:'⏱ %1 초 후 프로그램 자동 종료', args0:[num('SEC')], previousStatement:null, nextStatement:null, colour:C.botball, tooltip:'봇볼 경기용: 지정한 시간이 지나면 모든 동작을 멈추고 종료합니다. shut_down_in(s)' },
+
+  // 모터
+  { type:'wombat_motor', message0:'모터 %1 번을 %2 % 속도로 회전', args0:[port('PORT', MOTOR), num('SPEED')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'속도 −100 ~ 100 %. 음수면 반대로 돕니다. motor(port, percent)' },
+  { type:'wombat_motor_power', message0:'모터 %1 번을 %2 % 파워로 회전', args0:[port('PORT', MOTOR), num('SPEED')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'속도 제어 없이 전력(PWM)만 지정합니다. −100 ~ 100. motor_power(port, percent)' },
+  { type:'wombat_drive', message0:'양쪽 바퀴 구동  왼쪽 모터 %1 %2 %  오른쪽 모터 %3 %4 %', args0:[port('L', MOTOR), num('LS'), port('R', MOTOR), num('RS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'두 모터를 동시에 켭니다. 계속 돌아가므로 이후에 정지 블록을 사용하세요.' },
+  { type:'wombat_drive_time', message0:'왼쪽 모터 %1 %2 %  오른쪽 모터 %3 %4 % 로 %5 밀리초 이동 후 정지', args0:[port('L', MOTOR), num('LS'), port('R', MOTOR), num('RS'), num('MS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'두 모터를 지정 시간만큼 돌리고 멈춥니다. (1000밀리초 = 1초)' },
+  { type:'wombat_mav', message0:'모터 %1 번을 %2 틱/초 속도로 회전 (mav)', args0:[port('PORT', MOTOR), num('VEL')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'엔코더 속도 제어. −1500 ~ 1500 틱/초 (−1000 ~ 1000에서 더 정확). move_at_velocity' },
+  { type:'wombat_mtp', message0:'모터 %1 번을 %2 틱/초로 위치 %3 까지 이동 (mtp)', args0:[port('PORT', MOTOR), num('VEL'), num('POS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'절대 위치(틱)로 이동합니다. 약 1500틱 = 1바퀴. move_to_position' },
+  { type:'wombat_mrp', message0:'모터 %1 번을 %2 틱/초로 %3 틱만큼 이동 (mrp)', args0:[port('PORT', MOTOR), num('VEL'), num('POS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'현재 위치에서 상대적으로 이동합니다. move_relative_position' },
+  { type:'wombat_bmd', message0:'모터 %1 번 이동이 끝날 때까지 기다리기', args0:[port('PORT', MOTOR)], previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'mtp/mrp 이동이 끝날 때까지 기다립니다. block_motor_done' },
+  { type:'wombat_motor_done', message0:'모터 %1 번 이동 완료?', args0:[port('PORT', MOTOR)], output:'Boolean', colour:C.motor, tooltip:'목표 위치에 도착했으면 참. get_motor_done' },
+  { type:'wombat_off', message0:'모터 %1 번 끄기', args0:[port('PORT', MOTOR)], previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'모터 전원을 끕니다(관성으로 조금 더 움직임). off(port)' },
+  { type:'wombat_freeze', message0:'모터 %1 번 브레이크(즉시 정지)', args0:[port('PORT', MOTOR)], previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'모터를 능동적으로 제동해 바로 멈춥니다. freeze(port)' },
+  { type:'wombat_ao', message0:'모든 모터 끄기', previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'모든 모터를 끕니다. ao()' },
+  { type:'wombat_gmpc', message0:'모터 %1 번 위치값(틱)', args0:[port('PORT', MOTOR)], output:'Number', colour:C.motor, tooltip:'엔코더 위치값. get_motor_position_counter' },
+  { type:'wombat_cmpc', message0:'모터 %1 번 위치값 0으로 초기화', args0:[port('PORT', MOTOR)], previousStatement:null, nextStatement:null, colour:C.motor, tooltip:'clear_motor_position_counter' },
+
+  // 서보
+  { type:'wombat_enable_servos', message0:'모든 서보 %1', args0:[{type:'field_dropdown',name:'ON',options:[['켜기','1'],['끄기','0']]}], previousStatement:null, nextStatement:null, colour:C.servo, tooltip:'서보를 움직이려면 먼저 켜야 합니다. enable_servos() / disable_servos()' },
+  { type:'wombat_enable_servo', message0:'서보 %1 번 %2', args0:[port('PORT', SERVO), {type:'field_dropdown',name:'ON',options:[['켜기','1'],['끄기','0']]}], previousStatement:null, nextStatement:null, colour:C.servo, tooltip:'enable_servo(port) / disable_servo(port)' },
+  { type:'wombat_set_servo', message0:'서보 %1 번 위치를 %2 로 설정', args0:[port('PORT', SERVO), num('POS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.servo, tooltip:'위치 0 ~ 2047 (가운데 약 1024). set_servo_position(port, position)' },
+  { type:'wombat_servo_slow', message0:'서보 %1 번을 위치 %2 까지 천천히 이동 (빠르기 %3)', args0:[port('PORT', SERVO), num('POS'), num('STEP')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.servo, tooltip:'10밀리초마다 "빠르기"만큼씩 움직여 부드럽게 이동합니다. (빠르기 5~50 추천)' },
+  { type:'wombat_get_servo', message0:'서보 %1 번 위치값', args0:[port('PORT', SERVO)], output:'Number', colour:C.servo, tooltip:'마지막으로 명령한 위치값. get_servo_position(port)' },
+
+  // 센서
+  { type:'wombat_analog', message0:'아날로그 센서 %1 번 값', args0:[port('PORT', ANALOG)], output:'Number', colour:C.sensor, tooltip:'0 ~ 4095. 빛 센서, 거리(ET) 센서 등. analog(port)' },
+  { type:'wombat_digital', message0:'디지털 센서 %1 번 눌림?', args0:[port('PORT', DIGITAL)], output:null, colour:C.sensor, tooltip:'눌리면 1(참), 아니면 0(거짓). 터치 센서 등. digital(port)' },
+  { type:'wombat_wait_touch', message0:'터치 센서(디지털 %1번) 누를 때까지 기다리기', args0:[port('PORT', DIGITAL)], previousStatement:null, nextStatement:null, colour:C.sensor, tooltip:'wait_for_touch(port)' },
+  { type:'wombat_imu', message0:'%1 센서 %2 축 값', args0:[{type:'field_dropdown',name:'KIND',options:[['가속도','accel'],['자이로','gyro'],['지자기','magneto']]},{type:'field_dropdown',name:'AXIS',options:[['X','x'],['Y','y'],['Z','z']]}], output:'Number', colour:C.sensor, tooltip:'Wombat 내장 관성 센서 값. accel_x(), gyro_z() 등' },
+  { type:'wombat_gyro_cal', message0:'자이로 센서 보정하기', previousStatement:null, nextStatement:null, colour:C.sensor, tooltip:'자이로 사용 전에 한 번 호출하세요. 로봇을 가만히 두어야 합니다. gyro_calibrate()' },
+  { type:'wombat_battery', message0:'배터리 잔량 (0~1)', output:'Number', colour:C.sensor, tooltip:'0 = 0%, 1 = 100%. power_level()' },
+
+  // 버튼
+  { type:'wombat_button', message0:'%1 버튼 눌림?', args0:[{type:'field_dropdown',name:'BTN',options:[['A','a'],['B','b'],['C','c'],['X','x'],['Y','y'],['Z','z'],['아무','any']]}], output:'Boolean', colour:C.button, tooltip:'Wombat 화면 버튼. a_button() 등 (X·Y·Z는 "보이기" 후 사용)' },
+  { type:'wombat_wait_button', message0:'%1 버튼 %2 기다리기', args0:[{type:'field_dropdown',name:'BTN',options:[['A','a'],['B','b'],['C','c'],['X','x'],['Y','y'],['Z','z'],['아무','any']]},{type:'field_dropdown',name:'MODE',options:[['누를 때까지',''],['눌렀다 뗄 때까지','_clicked']]}], previousStatement:null, nextStatement:null, colour:C.button, tooltip:'wait_for_a_button() / wait_for_a_button_clicked()' },
+  { type:'wombat_extra_buttons', message0:'X·Y·Z 버튼 %1', args0:[{type:'field_dropdown',name:'SHOW',options:[['보이기','show'],['숨기기','hide']]}], previousStatement:null, nextStatement:null, colour:C.button, tooltip:'extra_buttons_show() / extra_buttons_hide()' },
+
+  // 시간
+  { type:'wombat_msleep', message0:'%1 밀리초 기다리기', args0:[num('MS')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.time, tooltip:'1000밀리초 = 1초. msleep(ms)' },
+  { type:'wombat_sleep_sec', message0:'%1 초 기다리기', args0:[num('SEC')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.time, tooltip:'msleep(초 × 1000)' },
+  { type:'wombat_seconds', message0:'현재 시간(초)', output:'Number', colour:C.time, tooltip:'시간 측정용. 두 시점의 값을 빼서 경과 시간을 구하세요. seconds()' },
+  { type:'wombat_systime', message0:'현재 시간(밀리초)', output:'Number', colour:C.time, tooltip:'systime()' },
+
+  // 화면·소리
+  { type:'wombat_print', message0:'화면에 출력 %1', args0:[{type:'input_value',name:'TEXT'}], previousStatement:null, nextStatement:null, colour:C.screen, tooltip:'Wombat 화면(콘솔)에 글자를 출력합니다. print()' },
+  { type:'wombat_print2', message0:'화면에 출력 %1 %2', args0:[{type:'input_value',name:'A'},{type:'input_value',name:'B'}], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.screen, tooltip:'설명 글자와 값을 함께 출력합니다. 예) 센서: 1234' },
+  { type:'wombat_console_clear', message0:'화면 지우기', previousStatement:null, nextStatement:null, colour:C.screen, tooltip:'console_clear()' },
+  { type:'wombat_beep', message0:'삐 소리 내기', previousStatement:null, nextStatement:null, colour:C.screen, tooltip:'beep()' },
+
+  // 카메라
+  { type:'wombat_camera_open', message0:'카메라 켜기 %1', args0:[{type:'field_dropdown',name:'KIND',options:[['블랙 카메라(로지텍)','black'],['기본','default']]}], previousStatement:null, nextStatement:null, colour:C.camera, tooltip:'camera_open_black() / camera_open()' },
+  { type:'wombat_camera_config', message0:'카메라 색상 설정 %1 불러오기', args0:[{type:'field_input',name:'NAME',text:'config'}], previousStatement:null, nextStatement:null, colour:C.camera, tooltip:'Wombat에서 만든 채널 설정 이름(.conf 제외). camera_load_config(name)' },
+  { type:'wombat_camera_update', message0:'카메라 새 영상 가져오기', previousStatement:null, nextStatement:null, colour:C.camera, tooltip:'물체 정보를 읽기 전에 매번 호출하세요. camera_update()' },
+  { type:'wombat_camera_close', message0:'카메라 끄기', previousStatement:null, nextStatement:null, colour:C.camera, tooltip:'camera_close()' },
+  { type:'wombat_obj_count', message0:'채널 %1 에서 찾은 물체 수', args0:[num('CH')], inputsInline:true, output:'Number', colour:C.camera, tooltip:'get_object_count(channel). 큰 물체가 0번입니다.' },
+  { type:'wombat_obj_prop', message0:'채널 %1 물체 %2 의 %3', args0:[num('CH'), num('OBJ'), {type:'field_dropdown',name:'PROP',options:[['중심 X','cx'],['중심 Y','cy'],['면적','area'],['신뢰도','conf']]}], inputsInline:true, output:'Number', colour:C.camera, tooltip:'get_object_center / get_object_area / get_object_confidence. 화면 크기 160×120' },
+
+  // Create 3
+  { type:'wombat_c3_connect', message0:'Create 3 연결하기', previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'create3_connect()' },
+  { type:'wombat_c3_straight', message0:'Create 3 직진 %1 m  최대속도 %2 m/s', args0:[num('DIST'), num('SPD')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'음수 거리는 후진. 최대 0.306 m/s. create3_drive_straight' },
+  { type:'wombat_c3_rotate', message0:'Create 3 제자리 회전 %1 도  최대 %2 도/초', args0:[num('ANG'), num('SPD')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'양수 = 반시계 방향. 최대 151 도/초. create3_rotate_degrees' },
+  { type:'wombat_c3_arc', message0:'Create 3 곡선 주행 반지름 %1 m  각도 %2 도  최대속도 %3 m/s', args0:[num('RAD'), num('ANG'), num('SPD')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'create3_drive_arc_degrees' },
+  { type:'wombat_c3_velocity', message0:'Create 3 속도 설정 직진 %1 m/s  회전 %2 rad/s', args0:[num('LIN'), num('ANG')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'계속 그 속도로 움직입니다. create3_velocity_set_components' },
+  { type:'wombat_c3_stop', message0:'Create 3 멈추기', previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'create3_velocity_set_components(0, 0)' },
+  { type:'wombat_c3_wait', message0:'Create 3 동작이 끝날 때까지 기다리기', previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'직진·회전 명령 뒤에 사용하세요. create3_wait()' },
+  { type:'wombat_c3_dock', message0:'Create 3 %1', args0:[{type:'field_dropdown',name:'ACT',options:[['충전대에서 나오기','undock'],['충전대로 돌아가기','dock']]}], previousStatement:null, nextStatement:null, colour:C.c3, tooltip:'create3_undock() / create3_dock()' },
+  { type:'wombat_c3_sensor', message0:'Create 3 %1 센서 %2 번 값', args0:[{type:'field_dropdown',name:'KIND',options:[['범퍼','bump'],['낭떠러지','cliff'],['적외선(IR)','ir']]}, num('ID')], inputsInline:true, output:'Number', colour:C.c3, tooltip:'create3_sensor_bump / cliff / ir (sensor_id)' },
+
+  // Create (구형)
+  { type:'wombat_cr_connect', message0:'Create %1', args0:[{type:'field_dropdown',name:'ACT',options:[['연결하기','connect'],['연결 끊기','disconnect']]}], previousStatement:null, nextStatement:null, colour:C.create, tooltip:'create_connect() / create_disconnect() — 프로그램 끝에서 꼭 연결을 끊으세요.' },
+  { type:'wombat_cr_direct', message0:'Create 바퀴 속도 왼쪽 %1 오른쪽 %2 mm/s', args0:[num('L'), num('R')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.create, tooltip:'−500 ~ 500 mm/s. create_drive_direct(left, right)' },
+  { type:'wombat_cr_straight', message0:'Create 직진 속도 %1 mm/s', args0:[num('S')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.create, tooltip:'create_drive_straight(speed)' },
+  { type:'wombat_cr_spin', message0:'Create 제자리 회전 %1 속도 %2', args0:[{type:'field_dropdown',name:'DIR',options:[['시계 방향','CW'],['반시계 방향','CCW']]}, num('S')], inputsInline:true, previousStatement:null, nextStatement:null, colour:C.create, tooltip:'create_spin_CW / create_spin_CCW' },
+  { type:'wombat_cr_stop', message0:'Create 멈추기', previousStatement:null, nextStatement:null, colour:C.create, tooltip:'create_drive_direct(0, 0)' },
+  { type:'wombat_cr_sensor', message0:'Create %1', args0:[{type:'field_dropdown',name:'S',options:[['왼쪽 범퍼 눌림','get_create_lbump'],['오른쪽 범퍼 눌림','get_create_rbump'],['이동 거리(mm)','get_create_distance'],['회전 각도(도)','get_create_total_angle'],['왼쪽 낭떠러지 센서값','get_create_lcliff_amt'],['오른쪽 낭떠러지 센서값','get_create_rcliff_amt'],['왼쪽 앞 낭떠러지 센서값','get_create_lfcliff_amt'],['오른쪽 앞 낭떠러지 센서값','get_create_rfcliff_amt']]}], output:'Number', colour:C.create, tooltip:'iRobot Create 센서 값' },
+  { type:'wombat_cr_reset', message0:'Create %1 0으로 초기화', args0:[{type:'field_dropdown',name:'S',options:[['이동 거리','set_create_distance'],['회전 각도','set_create_total_angle']]}], previousStatement:null, nextStatement:null, colour:C.create, tooltip:'set_create_distance(0) / set_create_total_angle(0)' },
+
+  // 반복 보조
+  { type:'wombat_forever', message0:'계속 반복하기 %1 %2', args0:[{type:'input_dummy'},{type:'input_statement',name:'DO'}], previousStatement:null, colour:'#5ba55b', tooltip:'while True: — 프로그램을 멈출 때까지 반복합니다.' },
+];
+Blockly.common.defineBlocksWithJsonArray(defs);
+
+/* ---------- Python 코드 생성기 ---------- */
+const G = P.forBlock;
+const line = s => s + '\n';
+const varGlobals = ws => {
+  const names = Blockly.Variables.allUsedVarModels(ws).map(m => P.getVariableName(m.getId()));
+  return names.length ? P.INDENT + 'global ' + names.join(', ') + '\n' : '';
+};
+G.wombat_start = b => {
+  const body = P.statementToCode(b, 'DO') || P.INDENT + 'pass\n';
+  return 'def main():\n' + varGlobals(b.workspace) + body + '\n\nif __name__ == "__main__":\n' + P.INDENT + 'main()\n';
+};
+G.wombat_wait_for_light = b => line(`wait_for_light(${b.getFieldValue('PORT')})`);
+G.wombat_shut_down_in = b => line(`shut_down_in(${v(b,'SEC')})`);
+
+G.wombat_motor = b => line(`motor(${b.getFieldValue('PORT')}, ${vi(b,'SPEED')})`);
+G.wombat_motor_power = b => line(`motor_power(${b.getFieldValue('PORT')}, ${vi(b,'SPEED')})`);
+G.wombat_drive = b => line(`motor(${b.getFieldValue('L')}, ${vi(b,'LS')})`) + line(`motor(${b.getFieldValue('R')}, ${vi(b,'RS')})`);
+G.wombat_drive_time = b => {
+  const L = b.getFieldValue('L'), R = b.getFieldValue('R');
+  return line(`motor(${L}, ${vi(b,'LS')})`) + line(`motor(${R}, ${vi(b,'RS')})`) + line(`msleep(${vi(b,'MS')})`) + line(`off(${L})`) + line(`off(${R})`);
+};
+G.wombat_mav = b => line(`mav(${b.getFieldValue('PORT')}, ${vi(b,'VEL')})`);
+G.wombat_mtp = b => line(`mtp(${b.getFieldValue('PORT')}, ${vi(b,'VEL')}, ${vi(b,'POS')})`);
+G.wombat_mrp = b => line(`mrp(${b.getFieldValue('PORT')}, ${vi(b,'VEL')}, ${vi(b,'POS')})`);
+G.wombat_bmd = b => line(`bmd(${b.getFieldValue('PORT')})`);
+G.wombat_motor_done = b => [`get_motor_done(${b.getFieldValue('PORT')})`, O.FUNCTION_CALL];
+G.wombat_off = b => line(`off(${b.getFieldValue('PORT')})`);
+G.wombat_freeze = b => line(`freeze(${b.getFieldValue('PORT')})`);
+G.wombat_ao = () => line('ao()');
+G.wombat_gmpc = b => [`gmpc(${b.getFieldValue('PORT')})`, O.FUNCTION_CALL];
+G.wombat_cmpc = b => line(`cmpc(${b.getFieldValue('PORT')})`);
+
+G.wombat_enable_servos = b => line(b.getFieldValue('ON') === '1' ? 'enable_servos()' : 'disable_servos()');
+G.wombat_enable_servo = b => line(`${b.getFieldValue('ON') === '1' ? 'enable_servo' : 'disable_servo'}(${b.getFieldValue('PORT')})`);
+G.wombat_set_servo = b => line(`set_servo_position(${b.getFieldValue('PORT')}, ${vi(b,'POS')})`);
+G.wombat_servo_slow = b => {
+  const fn = P.provideFunction_('servo_move_slow', `
+def ${P.FUNCTION_NAME_PLACEHOLDER_}(port, target, step):
+  # 10밀리초마다 step 만큼씩 서보를 움직여 부드럽게 이동
+  target = int(target)
+  step = max(1, abs(int(step)))
+  pos = get_servo_position(port)
+  while abs(target - pos) > step:
+    pos = pos + step if target > pos else pos - step
+    set_servo_position(port, pos)
+    msleep(10)
+  set_servo_position(port, target)
+`);
+  return line(`${fn}(${b.getFieldValue('PORT')}, ${v(b,'POS')}, ${v(b,'STEP','5')})`);
+};
+G.wombat_get_servo = b => [`get_servo_position(${b.getFieldValue('PORT')})`, O.FUNCTION_CALL];
+
+G.wombat_analog = b => [`analog(${b.getFieldValue('PORT')})`, O.FUNCTION_CALL];
+G.wombat_digital = b => [`digital(${b.getFieldValue('PORT')})`, O.FUNCTION_CALL];
+G.wombat_wait_touch = b => line(`wait_for_touch(${b.getFieldValue('PORT')})`);
+G.wombat_imu = b => [`${b.getFieldValue('KIND')}_${b.getFieldValue('AXIS')}()`, O.FUNCTION_CALL];
+G.wombat_gyro_cal = () => line('gyro_calibrate()');
+G.wombat_battery = () => ['power_level()', O.FUNCTION_CALL];
+
+G.wombat_button = b => [`${b.getFieldValue('BTN')}_button()`, O.FUNCTION_CALL];
+G.wombat_wait_button = b => {
+  const btn = b.getFieldValue('BTN'), mode = b.getFieldValue('MODE');
+  if (btn === 'any' && mode) return line('wait_for_any_button()') ; // 'any'는 clicked 버전이 없음
+  return line(`wait_for_${btn}_button${mode}()`);
+};
+G.wombat_extra_buttons = b => line(`extra_buttons_${b.getFieldValue('SHOW')}()`);
+
+G.wombat_msleep = b => line(`msleep(${vi(b,'MS')})`);
+G.wombat_sleep_sec = b => {
+  const s = v(b, 'SEC', O.MULTIPLICATIVE);
+  if (/^\d+(\.\d+)?$/.test(s)) return line(`msleep(${Math.round(parseFloat(s) * 1000)})`);
+  return line(`msleep(int(${s} * 1000))`);
+};
+G.wombat_seconds = () => ['seconds()', O.FUNCTION_CALL];
+G.wombat_systime = () => ['systime()', O.FUNCTION_CALL];
+
+G.wombat_print = b => line(`print(${v(b,'TEXT',O.NONE,"''")}, flush=True)`);
+G.wombat_print2 = b => line(`print(${v(b,'A',O.NONE,"''")}, ${v(b,'B',O.NONE,"''")}, flush=True)`);
+G.wombat_console_clear = () => line('console_clear()');
+G.wombat_beep = () => line('beep()');
+
+G.wombat_camera_open = b => line(b.getFieldValue('KIND') === 'black' ? 'camera_open_black()' : 'camera_open()');
+G.wombat_camera_config = b => line(`camera_load_config(${P.quote_(b.getFieldValue('NAME'))})`);
+G.wombat_camera_update = () => line('camera_update()');
+G.wombat_camera_close = () => line('camera_close()');
+G.wombat_obj_count = b => [`get_object_count(${vi(b,'CH')})`, O.FUNCTION_CALL];
+G.wombat_obj_prop = b => {
+  const ch = vi(b,'CH'), ob = vi(b,'OBJ');
+  switch (b.getFieldValue('PROP')) {
+    case 'cx': return [`get_object_center(${ch}, ${ob}).x`, O.MEMBER];
+    case 'cy': return [`get_object_center(${ch}, ${ob}).y`, O.MEMBER];
+    case 'area': return [`get_object_area(${ch}, ${ob})`, O.FUNCTION_CALL];
+    default: return [`get_object_confidence(${ch}, ${ob})`, O.FUNCTION_CALL];
+  }
+};
+
+G.wombat_c3_connect = () => line('create3_connect()');
+G.wombat_c3_straight = b => line(`create3_drive_straight(${v(b,'DIST')}, ${v(b,'SPD','0.3')})`);
+G.wombat_c3_rotate = b => line(`create3_rotate_degrees(${v(b,'ANG')}, ${v(b,'SPD','90')})`);
+G.wombat_c3_arc = b => line(`create3_drive_arc_degrees(${v(b,'RAD')}, ${v(b,'ANG')}, ${v(b,'SPD','0.3')})`);
+G.wombat_c3_velocity = b => line(`create3_velocity_set_components(${v(b,'LIN')}, ${v(b,'ANG')})`);
+G.wombat_c3_stop = () => line('create3_velocity_set_components(0, 0)');
+G.wombat_c3_wait = () => line('create3_wait()');
+G.wombat_c3_dock = b => line(`create3_${b.getFieldValue('ACT')}()`);
+G.wombat_c3_sensor = b => [`create3_sensor_${b.getFieldValue('KIND')}(${vi(b,'ID')})`, O.FUNCTION_CALL];
+
+G.wombat_cr_connect = b => line(`create_${b.getFieldValue('ACT')}()`);
+G.wombat_cr_direct = b => line(`create_drive_direct(${vi(b,'L')}, ${vi(b,'R')})`);
+G.wombat_cr_straight = b => line(`create_drive_straight(${vi(b,'S')})`);
+G.wombat_cr_spin = b => line(`create_spin_${b.getFieldValue('DIR')}(${vi(b,'S')})`);
+G.wombat_cr_stop = () => line('create_drive_direct(0, 0)');
+G.wombat_cr_sensor = b => [`${b.getFieldValue('S')}()`, O.FUNCTION_CALL];
+G.wombat_cr_reset = b => line(`${b.getFieldValue('S')}(0)`);
+
+G.wombat_forever = b => 'while True:\n' + (P.statementToCode(b, 'DO') || P.INDENT + 'pass\n');
+
+// 화면 출력이 바로 보이도록 기본 print 블록도 flush=True 사용
+G.text_print = b => line(`print(${v(b,'TEXT',O.NONE,"''")}, flush=True)`);
+
+const KIPR_HEADER = '#!/usr/bin/python3\nimport os, sys\nsys.path.append("/usr/lib")\nfrom kipr import *\n';
+
+/* ---------- 툴박스 ---------- */
+const N = n => ({ shadow:{ type:'math_number', fields:{ NUM:n } } });
+const T = t => ({ shadow:{ type:'text', fields:{ TEXT:t } } });
+const blk = (type, inputs, fields) => ({ kind:'block', type, ...(inputs ? { inputs } : {}), ...(fields ? { fields } : {}) });
+const lbl = text => ({ kind:'label', text });
+const toolbox = { kind:'categoryToolbox', contents:[
+  { kind:'category', name:'시작', colour:C.start, contents:[
+    blk('wombat_start'),
+    lbl('봇볼 경기용'),
+    blk('wombat_wait_for_light', null, { PORT:'0' }),
+    blk('wombat_shut_down_in', { SEC:N(119) }),
+  ]},
+  { kind:'category', name:'모터', colour:C.motor, contents:[
+    blk('wombat_motor', { SPEED:N(80) }),
+    blk('wombat_drive_time', { LS:N(80), RS:N(80), MS:N(1000) }, { L:'0', R:'3' }),
+    blk('wombat_drive', { LS:N(80), RS:N(80) }, { L:'0', R:'3' }),
+    blk('wombat_off'), blk('wombat_freeze'), blk('wombat_ao'),
+    blk('wombat_motor_power', { SPEED:N(50) }),
+    lbl('엔코더(틱) 정밀 제어'),
+    blk('wombat_mav', { VEL:N(1000) }),
+    blk('wombat_mrp', { VEL:N(1000), POS:N(1500) }),
+    blk('wombat_mtp', { VEL:N(1000), POS:N(0) }),
+    blk('wombat_bmd'), blk('wombat_motor_done'),
+    blk('wombat_gmpc'), blk('wombat_cmpc'),
+  ]},
+  { kind:'category', name:'서보', colour:C.servo, contents:[
+    blk('wombat_enable_servos'),
+    blk('wombat_set_servo', { POS:N(1024) }),
+    blk('wombat_servo_slow', { POS:N(1500), STEP:N(10) }),
+    blk('wombat_get_servo'),
+    blk('wombat_enable_servo'),
+  ]},
+  { kind:'category', name:'센서', colour:C.sensor, contents:[
+    blk('wombat_analog'), blk('wombat_digital'), blk('wombat_wait_touch'),
+    lbl('내장 센서'),
+    blk('wombat_imu'), blk('wombat_gyro_cal'), blk('wombat_battery'),
+  ]},
+  { kind:'category', name:'버튼', colour:C.button, contents:[
+    blk('wombat_wait_button'), blk('wombat_button'), blk('wombat_extra_buttons'),
+  ]},
+  { kind:'category', name:'시간', colour:C.time, contents:[
+    blk('wombat_msleep', { MS:N(1000) }), blk('wombat_sleep_sec', { SEC:N(1) }),
+    blk('wombat_seconds'), blk('wombat_systime'),
+  ]},
+  { kind:'category', name:'화면·소리', colour:C.screen, contents:[
+    blk('wombat_print', { TEXT:T('안녕, 웜뱃!') }),
+    blk('wombat_print2', { A:T('센서 값:'), B:{ block:{ type:'wombat_analog' } } }),
+    blk('wombat_console_clear'), blk('wombat_beep'),
+  ]},
+  { kind:'category', name:'카메라', colour:C.camera, contents:[
+    blk('wombat_camera_open'), blk('wombat_camera_config'), blk('wombat_camera_update'),
+    blk('wombat_obj_count', { CH:N(0) }), blk('wombat_obj_prop', { CH:N(0), OBJ:N(0) }),
+    blk('wombat_camera_close'),
+  ]},
+  { kind:'category', name:'Create 3', colour:C.c3, contents:[
+    blk('wombat_c3_connect'),
+    blk('wombat_c3_straight', { DIST:N(0.5), SPD:N(0.3) }),
+    blk('wombat_c3_rotate', { ANG:N(90), SPD:N(90) }),
+    blk('wombat_c3_arc', { RAD:N(0.3), ANG:N(90), SPD:N(0.2) }),
+    blk('wombat_c3_wait'),
+    blk('wombat_c3_velocity', { LIN:N(0.2), ANG:N(0) }),
+    blk('wombat_c3_stop'), blk('wombat_c3_dock'),
+    blk('wombat_c3_sensor', { ID:N(0) }),
+  ]},
+  { kind:'category', name:'Create (구형)', colour:C.create, contents:[
+    blk('wombat_cr_connect'),
+    blk('wombat_cr_direct', { L:N(200), R:N(200) }),
+    blk('wombat_cr_straight', { S:N(200) }),
+    blk('wombat_cr_spin', { S:N(100) }),
+    blk('wombat_cr_stop'), blk('wombat_cr_sensor'), blk('wombat_cr_reset'),
+  ]},
+  { kind:'sep' },
+  { kind:'category', name:'논리', categorystyle:'logic_category', contents:[
+    blk('controls_if'), { kind:'block', type:'controls_if', extraState:{ hasElse:true } },
+    blk('logic_compare'), blk('logic_operation'), blk('logic_negate'), blk('logic_boolean'),
+  ]},
+  { kind:'category', name:'반복', categorystyle:'loop_category', contents:[
+    blk('wombat_forever'),
+    blk('controls_repeat_ext', { TIMES:N(4) }),
+    blk('controls_whileUntil'),
+    blk('controls_for', { FROM:N(1), TO:N(10), BY:N(1) }),
+    blk('controls_flow_statements'),
+  ]},
+  { kind:'category', name:'수학', categorystyle:'math_category', contents:[
+    blk('math_number'), blk('math_arithmetic', { A:N(1), B:N(1) }), blk('math_single', { NUM:N(9) }),
+    blk('math_number_property', { NUMBER_TO_CHECK:N(0) }), blk('math_round', { NUM:N(3.1) }),
+    blk('math_modulo', { DIVIDEND:N(64), DIVISOR:N(10) }), blk('math_constrain', { VALUE:N(50), LOW:N(-100), HIGH:N(100) }),
+    blk('math_random_int', { FROM:N(1), TO:N(100) }),
+  ]},
+  { kind:'category', name:'텍스트', categorystyle:'text_category', contents:[
+    blk('text'), blk('text_join'), blk('text_length', { VALUE:T('abc') }),
+  ]},
+  { kind:'category', name:'변수', categorystyle:'variable_category', custom:'VARIABLE' },
+  { kind:'category', name:'함수', categorystyle:'procedure_category', custom:'PROCEDURE' },
+]};
+
+/* ---------- 작업 공간 ---------- */
+const theme = Blockly.Theme.defineTheme('wombat', {
+  base: Blockly.Themes.Classic,
+  fontStyle: { family:'"Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif', weight:'500', size:11 },
+  componentStyles: { workspaceBackgroundColour:'#f6f7fb', toolboxBackgroundColour:'#ffffff', flyoutBackgroundColour:'#eef1f7', flyoutOpacity:0.97, scrollbarColour:'#c3c9d6', insertionMarkerColour:'#14213d' },
+});
+const ws = Blockly.inject('blocklyDiv', {
+  toolbox, theme, renderer:'zelos', media:'https://cdn.jsdelivr.net/npm/blockly@13.4.0/media/',
+  grid:{ spacing:24, length:2, colour:'#dde1ea', snap:true },
+  zoom:{ controls:true, wheel:true, startScale:0.8, maxScale:2, minScale:0.4, scaleSpeed:1.15 },
+  trashcan:true, move:{ scrollbars:true, drag:true, wheel:false },
+  maxInstances:{ wombat_start:1 },
+  sounds:false, // 인터넷 없이도 오류가 나지 않도록 효과음 끔
+});
+ws.addChangeListener(Blockly.Events.disableOrphans);
+// 인터넷이 없을 때(Wombat Wi‑Fi 접속 중)도 휴지통·확대 아이콘이 보이도록 내장 이미지로 교체
+(function(){
+  const MEDIA = window.__WOMBAT_MEDIA__ || {};
+  const fix = el => {
+    for (const attr of ['href', 'xlink:href']) {
+      const v = el.getAttribute(attr) || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+      if (!v) continue;
+      const name = v.split('/').pop();
+      if (MEDIA[name] && v !== MEDIA[name]) { el.setAttribute('href', MEDIA[name]); el.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', MEDIA[name]); }
+    }
+  };
+  const root = document.getElementById('blocklyDiv');
+  root.querySelectorAll('image').forEach(fix);
+  new MutationObserver(ms => ms.forEach(m => {
+    if (m.type === 'attributes' && m.target.tagName === 'image') fix(m.target);
+    m.addedNodes && m.addedNodes.forEach(n => { if (n.nodeType !== 1) return; if (n.tagName === 'image') fix(n); n.querySelectorAll && n.querySelectorAll('image').forEach(fix); });
+  })).observe(root, { subtree:true, childList:true, attributes:true, attributeFilter:['href','xlink:href'] });
+})();
+
+/* ---------- 코드 생성·하이라이트 ---------- */
+const KIPR_FUNCS = new Set(('motor motor_power mav mtp mrp bmd get_motor_done off freeze ao gmpc cmpc enable_servos disable_servos enable_servo disable_servo set_servo_position get_servo_position analog digital wait_for_touch accel_x accel_y accel_z gyro_x gyro_y gyro_z magneto_x magneto_y magneto_z gyro_calibrate power_level a_button b_button c_button x_button y_button z_button any_button extra_buttons_show extra_buttons_hide msleep seconds systime console_clear beep camera_open camera_open_black camera_load_config camera_update camera_close get_object_count get_object_center get_object_area get_object_confidence wait_for_light shut_down_in create_connect create_disconnect create_drive_direct create_drive_straight create_spin_CW create_spin_CCW get_create_lbump get_create_rbump get_create_distance get_create_total_angle get_create_lcliff_amt get_create_rcliff_amt get_create_lfcliff_amt get_create_rfcliff_amt set_create_distance set_create_total_angle create3_connect create3_drive_straight create3_rotate_degrees create3_drive_arc_degrees create3_velocity_set_components create3_wait create3_dock create3_undock create3_sensor_bump create3_sensor_cliff create3_sensor_ir').split(' '));
+['a','b','c','x','y','z','any'].forEach(k => { KIPR_FUNCS.add(`wait_for_${k}_button`); KIPR_FUNCS.add(`wait_for_${k}_button_clicked`); });
+const KW = new Set('def if elif else while for in return global import from not and or is True False None pass break continue lambda try except finally with as'.split(' '));
+const BUILTIN = new Set('print int float str abs round range len min max sum math random sys os'.split(' '));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function highlight(lineText){
+  const re = /(#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(lineText))) {
+    out += esc(lineText.slice(last, m.index));
+    const t = esc(m[0]);
+    if (m[1]) out += `<span class="t-com">${t}</span>`;
+    else if (m[2]) out += `<span class="t-str">${t}</span>`;
+    else if (m[3]) out += `<span class="t-num">${t}</span>`;
+    else if (KW.has(m[4])) out += `<span class="t-kw">${t}</span>`;
+    else if (KIPR_FUNCS.has(m[4])) out += `<span class="t-kipr">${t}</span>`;
+    else if (BUILTIN.has(m[4])) out += `<span class="t-fn">${t}</span>`;
+    else out += t;
+    last = re.lastIndex;
+  }
+  return out + esc(lineText.slice(last));
+}
+
+let currentCode = '';
+function generateCode(){
+  let body;
+  try { body = P.workspaceToCode(ws); }
+  catch (e) { console.error(e); body = '# 코드 생성 중 오류가 발생했습니다: ' + e.message + '\n'; }
+  const hasStart = ws.getBlocksByType('wombat_start', false).length > 0;
+  body = body.replace(/^\n+/, '');
+  let code = KIPR_HEADER + '\n';
+  code += hasStart ? body : (body ? body + '\n' : '') + '# 왼쪽 [시작] 메뉴에서 "▶ 프로그램 시작" 블록을 가져와\n# 그 안에 블록을 넣으면 코드가 만들어집니다.\n';
+  return code.replace(/\n{4,}/g, '\n\n\n');
+}
+function render(){
+  currentCode = generateCode();
+  const lines = currentCode.replace(/\n$/, '').split('\n');
+  $('#codeView').innerHTML = lines.map((l, i) => `<div class="ln"><i>${i + 1}</i><code>${highlight(l) || ' '}</code></div>`).join('');
+  $('#lineCount').textContent = `${lines.length}줄 · Python 3`;
+}
+
+/* ---------- 저장/불러오기 ---------- */
+const STORE_KEY = 'wombat-blocks-autosave-v1';
+const store = {
+  get(){ try { return localStorage.getItem(STORE_KEY); } catch(e){ return null; } },
+  set(x){ try { localStorage.setItem(STORE_KEY, x); } catch(e){} },
+};
+function snapshot(){ return JSON.stringify({ app:'wombat-blocks', version:1, name:$('#projName').value, workspace:Blockly.serialization.workspaces.save(ws) }); }
+function loadProject(obj){
+  ws.clear();
+  if (obj.workspace) Blockly.serialization.workspaces.load(obj.workspace, ws);
+  if (obj.name) $('#projName').value = obj.name;
+  ws.scrollCenter();
+}
+let saveT;
+ws.addChangeListener(e => {
+  if (e.isUiEvent) return;
+  render();
+  clearTimeout(saveT); saveT = setTimeout(() => { store.set(snapshot()); $('#stat').textContent = '자동 저장됨'; }, 400);
+});
+$('#projName').addEventListener('input', () => store.set(snapshot()));
+
+const safeName = () => ($('#projName').value.trim() || 'wombat').replace(/[\\/:*?"<>|\s]+/g, '_');
+let downloads = null;
+function blobDownload(filename, text, mime){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type:mime }));
+  a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function saveFile(filename, text, mime){
+  if (downloads) {
+    try { await downloads.save({ filename, data:text }); toast(`💾 ${filename} 저장 완료`); }
+    catch (e) { if (e && e.code !== 'declined') toast('이 화면에서는 파일 저장을 할 수 없습니다. 코드 복사를 이용해 주세요.'); }
+    return;
+  }
+  blobDownload(filename, text, mime); toast(`💾 ${filename} 저장`);
+}
+// claude.ai 아티팩트 안에서는 downloads 기능을 사용(.py 확장자는 허용되지 않아 숨김)
+const inArtifact = !!(window.claude && typeof window.claude.use === 'function');
+if (inArtifact) {
+  $('#btnPy').style.display = 'none';
+  window.claude.use('downloads').then(d => { downloads = d; if (!d) $('#btnSave').title = '이 화면에서는 저장이 지원되지 않을 수 있습니다'; }).catch(() => {});
+}
+$('#btnSave').onclick = () => saveFile(`${safeName()}.json`, snapshot(), 'application/json');
+$('#btnPy').onclick = () => saveFile(`${safeName()}.py`, currentCode, 'text/x-python');
+$('#btnOpen').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text());
+    if (!obj.workspace) throw new Error('형식 오류');
+    loadProject(obj); toast(`📂 ${f.name} 불러옴`);
+  } catch (err) { toast('웜뱃 블록코딩 프로젝트 파일(.json)이 아닙니다.'); }
+  e.target.value = '';
+};
+async function copyCode(){
+  try { await navigator.clipboard.writeText(currentCode); toast('📋 Python 코드를 복사했습니다. KIPR Software Suite에 붙여넣으세요.'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = currentCode; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(_){}
+    ta.remove();
+    toast(ok ? '📋 Python 코드를 복사했습니다.' : '복사가 막혀 있습니다. 코드 영역을 직접 선택해 복사하세요.');
+  }
+}
+$('#btnCopy').onclick = copyCode;
+
+/* ---------- 예제 ---------- */
+const S = (name, value) => `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
+const nv = (name, n) => `<value name="${name}">${S(name, n)}</value>`;
+const tv = (name, t) => `<value name="${name}"><shadow type="text"><field name="TEXT">${t}</field></shadow></value>`;
+const chain = arr => arr.reduceRight((acc, x) => x.replace('<!--N-->', acc ? `<next>${acc}</next>` : ''), '');
+const B = (type, inner = '') => `<block type="${type}">${inner}<!--N--></block>`;
+const startWith = (...stmts) => `<xml xmlns="https://developers.google.com/blockly/xml"><block type="wombat_start" x="40" y="40"><statement name="DO">${chain(stmts)}</statement></block></xml>`;
+const drive = (l, r, ms) => B('wombat_drive_time', `<field name="L">0</field><field name="R">3</field>${nv('LS', l)}${nv('RS', r)}${nv('MS', ms)}`);
+const EXAMPLES = [
+  { name:'처음 시작하기', desc:'출력 → 앞으로 → 회전 → 뒤로', xml: startWith(
+    B('wombat_print', tv('TEXT', '안녕, 웜뱃!')),
+    drive(80, 80, 2000),
+    drive(-60, 60, 800),
+    drive(-80, -80, 1000),
+    B('wombat_print', tv('TEXT', '끝!')) ) },
+  { name:'A 버튼으로 출발 + 사각형', desc:'버튼 대기, 4번 반복', xml: startWith(
+    B('wombat_print', tv('TEXT', 'A 버튼을 누르면 출발합니다')),
+    B('wombat_wait_button', '<field name="BTN">a</field><field name="MODE"></field>'),
+    B('controls_repeat_ext', `${nv('TIMES', 4)}<statement name="DO">${chain([drive(80, 80, 1500), drive(-60, 60, 750)])}</statement>`),
+    B('wombat_ao') ) },
+  { name:'라인 따라가기', desc:'아날로그 빛 센서 0번으로 검은 선 따라가기', xml: startWith(
+    B('wombat_print', tv('TEXT', '라인 따라가기 시작')),
+    B('wombat_forever', `<statement name="DO">${chain([
+      B('controls_if', `<mutation else="1"></mutation><value name="IF0"><block type="logic_compare"><field name="OP">GT</field><value name="A"><block type="wombat_analog"><field name="PORT">0</field></block></value>${nv('B', 1500)}</block></value><statement name="DO0">${B('wombat_drive', `<field name="L">0</field><field name="R">3</field>${nv('LS', 20)}${nv('RS', 80)}`).replace('<!--N-->','')}</statement><statement name="ELSE">${B('wombat_drive', `<field name="L">0</field><field name="R">3</field>${nv('LS', 80)}${nv('RS', 20)}`).replace('<!--N-->','')}</statement>`),
+      B('wombat_msleep', nv('MS', 10)) ])}</statement>`) ) },
+  { name:'터치 센서로 벽 감지', desc:'벽에 닿을 때까지 전진 후 후진', xml: startWith(
+    B('controls_whileUntil', `<field name="MODE">UNTIL</field><value name="BOOL"><block type="wombat_digital"><field name="PORT">0</field></block></value><statement name="DO">${chain([B('wombat_drive', `<field name="L">0</field><field name="R">3</field>${nv('LS', 60)}${nv('RS', 60)}`), B('wombat_msleep', nv('MS', 10))])}</statement>`),
+    B('wombat_ao'),
+    B('wombat_beep'),
+    drive(-60, -60, 1000) ) },
+  { name:'서보 집게 잡기', desc:'서보 켜기 → 열기 → 천천히 닫기', xml: startWith(
+    B('wombat_enable_servos'),
+    B('wombat_set_servo', `<field name="PORT">0</field>${nv('POS', 400)}`),
+    B('wombat_msleep', nv('MS', 1000)),
+    drive(50, 50, 1500),
+    B('wombat_servo_slow', `<field name="PORT">0</field>${nv('POS', 1600)}${nv('STEP', 10)}`),
+    B('wombat_print2', `${tv('A', '서보 위치:')}<value name="B"><block type="wombat_get_servo"><field name="PORT">0</field></block></value>`),
+    B('wombat_enable_servos', '<field name="ON">0</field>') ) },
+  { name:'봇볼 경기 시작 템플릿', desc:'빛 센서 출발 + 119초 자동 종료', xml: startWith(
+    B('wombat_wait_for_light', '<field name="PORT">0</field>'),
+    B('wombat_shut_down_in', nv('SEC', 119)),
+    B('wombat_enable_servos'),
+    drive(90, 90, 2000),
+    B('wombat_ao') ) },
+  { name:'Create 3 사각형 그리기', desc:'0.5 m 직진과 90도 회전 4번', xml: startWith(
+    B('wombat_c3_connect'),
+    B('controls_repeat_ext', `${nv('TIMES', 4)}<statement name="DO">${chain([B('wombat_c3_straight', `${nv('DIST', 0.5)}${nv('SPD', 0.3)}`), B('wombat_c3_rotate', `${nv('ANG', 90)}${nv('SPD', 90)}`)])}</statement>`),
+    B('wombat_c3_wait'),
+    B('wombat_print', tv('TEXT', '완료!')) ) },
+];
+function loadXml(xmlText){
+  ws.clear();
+  Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xmlText), ws);
+  ws.scrollCenter();
+}
+const exList = $('#exList');
+EXAMPLES.forEach((ex, i) => {
+  const b = document.createElement('button');
+  b.innerHTML = `<b>${esc(ex.name)}</b><span>${esc(ex.desc)}</span>`;
+  b.onclick = () => { loadXml(ex.xml); $('#projName').value = ex.name.replace(/\s+/g, '_'); $('#exMenu').classList.remove('open'); toast(`예제 "${ex.name}"을(를) 불러왔습니다`); };
+  exList.appendChild(b);
+});
+$('#btnEx').onclick = e => { e.stopPropagation(); $('#exMenu').classList.toggle('open'); };
+document.addEventListener('click', e => { if (!$('#exMenu').contains(e.target)) $('#exMenu').classList.remove('open'); });
+
+// 새로 만들기 (확인 대화상자 대신 두 번 누르기)
+let newArmed = 0;
+$('#btnNew').onclick = () => {
+  if (ws.getAllBlocks(false).length > 1 && Date.now() - newArmed > 3000) { newArmed = Date.now(); toast('한 번 더 누르면 지금 작업을 지우고 새로 시작합니다'); return; }
+  newArmed = 0;
+  loadXml('<xml xmlns="https://developers.google.com/blockly/xml"><block type="wombat_start" x="40" y="40"></block></xml>');
+  $('#projName').value = '내_웜뱃_프로그램';
+  toast('새 프로젝트를 시작합니다');
+};
+
+/* ---------- Wombat 연결 (KIPR Software Suite / Voldigate HTTP API) ----------
+   Wombat의 IDE 서버(포트 8888)가 제공하는 기능을 그대로 사용합니다.
+   GET  /get-users                       → 사용자 목록
+   GET  /get-projects?userName=          → 프로젝트 목록 (projectLanguage)
+   POST /save-file-content               → {filePath, fileContents}
+   POST /compile-code                    → {userName, projectName, fileName, activeLanguage}
+   GET  /run-code?…                      → 실행 출력 스트림(Server-Sent Events)
+   POST /stop-code                       → 정지 + 모든 모터 끄기                         */
+const KISS_ROOT = '/home/kipr/Documents/KISS';
+const CONN_KEY = 'wombat-blocks-connection-v1';
+const conn = { ip:'192.168.125.1', port:'8888', user:'', project:'', ok:false };
+try { Object.assign(conn, JSON.parse(localStorage.getItem(CONN_KEY) || '{}'), { ok:false }); } catch (e) {}
+const saveConn = () => { try { localStorage.setItem(CONN_KEY, JSON.stringify({ ip:conn.ip, port:conn.port, user:conn.user, project:conn.project })); } catch (e) {} };
+const baseUrl = (ip = conn.ip, port = conn.port) => `http://${ip.trim()}:${String(port).trim() || '8888'}`;
+
+async function api(path, { method = 'GET', body, timeout = 8000, base } = {}){
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), timeout);
+  try {
+    const opts = { method, signal:ac.signal };
+    if (body !== undefined) { opts.headers = { 'Content-Type':'application/json' }; opts.body = JSON.stringify(body); }
+    const r = await fetch((base || baseUrl()) + path, opts);
+    const text = await r.text();
+    let data = text; try { data = JSON.parse(text); } catch (e) {}
+    return { ok:r.ok, status:r.status, data };
+  } finally { clearTimeout(t); }
+}
+const netErrorText = e => (e && e.name === 'AbortError')
+  ? 'Wombat이 응답하지 않습니다. 주소가 맞는지, 컴퓨터가 Wombat Wi‑Fi(또는 랜선)에 연결되어 있는지 확인하세요.'
+  : 'Wombat에 접속할 수 없습니다. ① 컴퓨터가 Wombat Wi‑Fi/랜선에 연결되어 있는지 ② 주소(About 화면의 IP)가 맞는지 ③ 크롬이 "로컬 네트워크 접근"을 물었다면 허용했는지 확인하세요.';
+
+// 실행 결과 콘솔
+const consoleOut = $('#consoleOut');
+let consoleFresh = true;
+// 출력이 아주 많아도(반복문 안의 print 등) 화면이 멈추지 않도록 한 프레임에 모아서 그리고 최근 줄만 남김
+const MAX_LINES = 2000;
+let pending = [], flushQueued = false;
+function clog(text, cls){
+  pending.push([text, cls]);
+  if (pending.length > MAX_LINES) pending = pending.slice(-MAX_LINES);
+  if (!flushQueued) { flushQueued = true; requestAnimationFrame(flushConsole); }
+}
+function flushConsole(){
+  flushQueued = false;
+  if (consoleFresh) { consoleOut.textContent = ''; consoleFresh = false; }
+  const view = $('#consoleView');
+  const nearBottom = view.scrollHeight - view.scrollTop - view.clientHeight < 120;
+  const frag = document.createDocumentFragment();
+  let lines = '', curCls = null, forceScroll = false;
+  const push = () => { if (!lines) return; const sp = document.createElement('span'); if (curCls) sp.className = curCls; sp.textContent = lines; frag.appendChild(sp); lines = ''; };
+  for (const [text, cls] of pending) {
+    if ((cls || null) !== curCls) { push(); curCls = cls || null; }
+    if (cls) forceScroll = true;
+    lines += text + '\n';
+  }
+  push(); pending = [];
+  consoleOut.appendChild(frag);
+  let n = consoleOut.childNodes.length;
+  while (n-- > 400) consoleOut.removeChild(consoleOut.firstChild);
+  if (consoleOut.textContent.length > 400000) consoleOut.textContent = consoleOut.textContent.slice(-200000);
+  if (nearBottom || forceScroll) view.scrollTop = view.scrollHeight;
+}
+$('#btnClearConsole').onclick = () => { pending = []; consoleOut.textContent = ''; consoleFresh = false; };
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.view === id));
+  document.querySelectorAll('.view').forEach(vw => vw.classList.toggle('on', vw.id === id));
+}
+
+function updateConnUI(){
+  const btn = $('#btnConn');
+  btn.classList.toggle('connected', conn.ok);
+  $('#connLbl').textContent = conn.ok ? `${conn.user} / ${conn.project}` : 'Wombat 연결';
+  btn.title = conn.ok ? `연결됨: ${baseUrl()} · ${conn.user} / ${conn.project} (누르면 변경)` : 'Wombat 로봇 연결 설정';
+  $('#btnRun').disabled = !conn.ok || busy;
+  $('#btnSendOnly').disabled = !conn.ok || busy || running;
+  $('#btnStop').disabled = !conn.ok || (!running && !busy);
+  $('#consoleTarget').textContent = conn.ok ? `🤖 ${baseUrl()} · ${conn.user} / ${conn.project} / src/main.py` : '연결된 Wombat 없음';
+  $('#tabConsole').classList.toggle('live', running);
+}
+
+// 연결 대화상자
+const modal = $('#connModal'), connMsg = $('#connMsg'), userSel = $('#userSel'), projSel = $('#projSel');
+function setMsg(text, kind){ connMsg.className = 'msg show ' + kind; connMsg.innerHTML = text; }
+function openConn(){
+  $('#ipIn').value = conn.ip; $('#portIn').value = conn.port;
+  $('#artifactNote').style.display = inArtifact ? 'block' : 'none';
+  connMsg.className = 'msg';
+  syncChips();
+  modal.hidden = false;
+  if (!inArtifact) setTimeout(() => $('#ipIn').focus(), 50);
+}
+const closeConn = () => { modal.hidden = true; };
+$('#btnConn').onclick = openConn;
+$('#btnConnClose').onclick = closeConn;
+modal.addEventListener('click', e => { if (e.target === modal) closeConn(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeConn(); });
+
+let foundProjects = [];
+async function testConnection(){
+  const ip = $('#ipIn').value.trim(), port = $('#portIn').value.trim() || '8888';
+  if (!/^[A-Za-z0-9.\-]+$/.test(ip)) { setMsg('주소 형식이 올바르지 않습니다. 예) 192.168.125.1', 'err'); return; }
+  if (inArtifact) { setMsg('게시된 페이지에서는 접속이 막혀 있습니다. 위의 버튼으로 웹앱 파일을 내려받아 크롬에서 열어 주세요.', 'err'); return; }
+  setMsg('연결 확인 중…', 'info');
+  userSel.disabled = projSel.disabled = $('#btnConnOk').disabled = true;
+  let res;
+  try { res = await api('/get-users', { base:baseUrl(ip, port), timeout:6000 }); }
+  catch (e) { setMsg(netErrorText(e), 'err'); return; }
+  const users = res.ok && res.data && Array.isArray(res.data.users) ? res.data.users.map(u => u.userName).filter(Boolean) : null;
+  if (!users) { setMsg(`Wombat에 접속은 됐지만 사용자 목록을 읽지 못했습니다(응답 ${res.status}). Wombat을 최신 WombatOS로 업데이트해 주세요.`, 'err'); return; }
+  conn.ip = ip; conn.port = port; saveConn();
+  if (!users.length) { setMsg(`✅ 연결됨. 아직 사용자가 없습니다. 크롬에서 <b>${esc(baseUrl())}</b>을 열어 사용자와 Python 프로젝트를 먼저 만드세요.`, 'ok'); return; }
+  userSel.innerHTML = users.map(u => `<option value="${esc(u)}">${esc(u)}</option>`).join('');
+  userSel.disabled = false;
+  if (users.includes(conn.user)) userSel.value = conn.user;
+  setMsg(`✅ Wombat에 연결되었습니다. 사용자 ${users.length}명을 찾았습니다.`, 'ok');
+  await loadProjects();
+}
+async function loadProjects(){
+  const user = userSel.value;
+  projSel.disabled = true; $('#btnConnOk').disabled = true;
+  projSel.innerHTML = '<option>불러오는 중…</option>';
+  let res;
+  try { res = await api('/get-projects?userName=' + encodeURIComponent(user)); }
+  catch (e) { setMsg(netErrorText(e), 'err'); return; }
+  const all = res.ok && res.data && Array.isArray(res.data.projects) ? res.data.projects : [];
+  foundProjects = all.filter(p => p && p.projectName && p.projectLanguage === 'python');
+  if (!foundProjects.length) {
+    projSel.innerHTML = '<option>Python 프로젝트 없음</option>';
+    setMsg(`"${esc(user)}" 사용자에게 Python 프로젝트가 없습니다. 크롬에서 <b>${esc(baseUrl())}</b>을 열어 언어를 Python으로 골라 새 프로젝트를 만든 뒤 다시 연결 확인을 누르세요.` + (all.length ? ` (C 등 다른 언어 프로젝트 ${all.length}개는 목록에서 뺐습니다)` : ''), 'info');
+    return;
+  }
+  projSel.innerHTML = foundProjects.map(p => `<option value="${esc(p.projectName)}">${esc(p.projectName)}</option>`).join('');
+  if (foundProjects.some(p => p.projectName === conn.project) && user === conn.user) projSel.value = conn.project;
+  projSel.disabled = false; $('#btnConnOk').disabled = false;
+  setMsg(`✅ 연결됨 · "${esc(user)}" 사용자의 Python 프로젝트 ${foundProjects.length}개. 연결할 프로젝트를 고르세요.`, 'ok');
+}
+$('#btnTest').onclick = testConnection;
+const syncChips = () => document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.ip === $('#ipIn').value.trim()));
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => { $('#ipIn').value = c.dataset.ip; $('#portIn').value = '8888'; syncChips(); testConnection(); });
+$('#ipIn').addEventListener('input', syncChips);
+$('#ipIn').addEventListener('keydown', e => { if (e.key === 'Enter') testConnection(); });
+userSel.onchange = loadProjects;
+$('#btnConnOk').onclick = () => {
+  conn.user = userSel.value; conn.project = projSel.value; conn.ok = true; saveConn(); updateConnUI(); closeConn();
+  showTab('consoleView');
+  clog(`🤖 ${baseUrl()} 의 ${conn.user} / ${conn.project} 프로젝트에 연결했습니다. [▶ 실행]을 누르세요.`, 'c-ok');
+  toast('Wombat에 연결했습니다');
+};
+$('#btnDisconnect').onclick = () => { if (running) stopProgram(); conn.ok = false; updateConnUI(); closeConn(); toast('연결을 해제했습니다'); };
+
+// 게시된 페이지 → 웹앱 HTML 파일 내려받기
+$('#btnGetHtml').onclick = async () => {
+  try {
+    const r = await fetch('index.html', { cache:'no-store' });
+    if (!r.ok) throw new Error('fetch');
+    const html = await r.text();
+    if (!downloads) throw new Error('no downloads');
+    await downloads.save({ filename:'wombat-blocks.html', data:html });
+    toast('💾 wombat-blocks.html 저장 완료 — 크롬에서 열어 주세요');
+  } catch (e) {
+    if (e && e.code === 'declined') return;
+    toast('여기서는 내려받기가 안 됩니다. 채팅에 첨부된 HTML 파일을 사용해 주세요.');
+  }
+};
+
+// 보내기 → 문법 검사 → 실행
+let busy = false, running = false, es = null, stopRequested = false, stopQuiet = false, stopLogged = false;
+async function sendAndCompile(){
+  const filePath = `${KISS_ROOT}/${conn.user}/${conn.project}/src/main.py`;
+  clog(`⬆ main.py 보내는 중… (${currentCode.split('\n').length}줄)`, 'c-sys');
+  const s = await api('/save-file-content', { method:'POST', body:{ filePath, fileContents:currentCode } });
+  if (!s.ok) throw new Error(`저장 실패 (응답 ${s.status}) ${typeof s.data === 'string' ? s.data : JSON.stringify(s.data)}`);
+  clog('🔎 문법 검사(컴파일) 중…', 'c-sys');
+  const c = await api('/compile-code', { method:'POST', timeout:30000, body:{ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' } });
+  const msg = c.data && c.data.message;
+  if (!c.ok || msg !== 'successful') {
+    const err = (c.data && (c.data.error || c.data.details)) || `응답 ${c.status}`;
+    clog('❌ 문법 오류가 있어 실행하지 않았습니다:', 'c-err');
+    clog(String(err).trim(), 'c-err');
+    return false;
+  }
+  clog('✅ 문법 검사 통과', 'c-ok');
+  return true;
+}
+async function runProgram(sendOnly = false){
+  if (!conn.ok || busy) return;
+  if (running) await stopProgram(true);
+  busy = true; updateConnUI(); showTab('consoleView');
+  clog(`──────── ${new Date().toLocaleTimeString('ko-KR')} ────────`, 'c-dim');
+  try {
+    const ok = await sendAndCompile();
+    if (!ok || sendOnly) { if (ok) clog('Wombat의 Programs 화면이나 Software Suite에서도 실행할 수 있습니다.', 'c-dim'); return; }
+    clog('▶ 실행 시작', 'c-sys');
+    const q = new URLSearchParams({ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' });
+    let ended = false;
+    stopRequested = false;
+    es = new EventSource(`${baseUrl()}/run-code?${q}`);
+    running = true;
+    es.onmessage = ev => {
+      String(ev.data).split('\n').forEach(l => {
+        if (!l || l.startsWith('[core/wombat]')) return;
+        if (l.startsWith('Process exited with code') && stopRequested) { if (!stopQuiet && !stopLogged) { stopLogged = true; clog('■ 정지했습니다 (모든 모터 꺼짐)', 'c-sys'); } return; }
+        if (l.startsWith('Process exited with code')) { const code = l.replace(/\D+/g, ''); clog(code === '0' ? '🏁 프로그램이 끝났습니다 (종료 코드 0)' : `⚠️ 프로그램이 종료되었습니다 (종료 코드 ${code || '?'})`, code === '0' ? 'c-ok' : 'c-err'); return; }
+        clog(l, l.startsWith('ERROR:') ? 'c-err' : '');
+      });
+    };
+    es.addEventListener('end', () => { ended = true; finishRun(); });
+    es.onerror = () => { if (!ended && running) clog('연결이 끊겼습니다. Wombat이 꺼졌거나 Wi‑Fi가 끊겼을 수 있습니다.', 'c-err'); finishRun(); };
+  } catch (e) {
+    clog('❌ ' + (e && (e.name === 'AbortError' || e instanceof TypeError) ? netErrorText(e) : e.message), 'c-err');
+  } finally { busy = false; updateConnUI(); }
+}
+function finishRun(){ if (es) { es.close(); es = null; } running = false; updateConnUI(); }
+async function stopProgram(quiet = false){
+  if (!conn.ok) return;
+  stopRequested = true; stopQuiet = quiet; stopLogged = false;
+  try { await api('/stop-code', { method:'POST', timeout:5000 }); }
+  catch (e) { if (!quiet) clog('정지 명령을 보내지 못했습니다. Wombat 화면에서 직접 정지하세요.', 'c-err'); }
+  await new Promise(r => setTimeout(r, 150));
+  finishRun();
+  if (!quiet && !stopLogged) { stopLogged = true; clog('■ 정지했습니다 (모든 모터 꺼짐)', 'c-sys'); }
+}
+$('#btnRun').onclick = () => runProgram(false);
+$('#btnSendOnly').onclick = () => runProgram(true);
+$('#btnStop').onclick = () => stopProgram(false);
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && conn.ok) { e.preventDefault(); runProgram(false); } });
+updateConnUI();
+
+/* ---------- 탭·글자 크기·분할선 ---------- */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.view').forEach(vw => vw.classList.toggle('on', vw.id === t.dataset.view));
+});
+let fontSize = 13.5;
+const setFont = d => { fontSize = Math.min(22, Math.max(10, fontSize + d)); $('#codeView').style.fontSize = fontSize + 'px'; };
+$('#btnFontUp').onclick = () => setFont(1);
+$('#btnFontDown').onclick = () => setFont(-1);
+
+const splitter = $('#splitter'), panel = $('#panel');
+splitter.addEventListener('pointerdown', e => {
+  splitter.setPointerCapture(e.pointerId); splitter.classList.add('drag');
+  const move = ev => { const w = window.innerWidth - ev.clientX; panel.style.width = Math.min(window.innerWidth * 0.75, Math.max(280, w)) + 'px'; Blockly.svgResize(ws); };
+  const up = () => { splitter.classList.remove('drag'); splitter.removeEventListener('pointermove', move); splitter.removeEventListener('pointerup', up); };
+  splitter.addEventListener('pointermove', move); splitter.addEventListener('pointerup', up);
+});
+new ResizeObserver(() => Blockly.svgResize(ws)).observe($('#blocklyArea'));
+
+/* ---------- 시작 ---------- */
+const saved = store.get();
+let restored = false;
+if (saved) { try { loadProject(JSON.parse(saved)); restored = ws.getAllBlocks(false).length > 0; } catch (e) {} }
+if (!restored) loadXml(EXAMPLES[0].xml);
+render();
+
+// 테스트·확장용
+window.WombatBlocks = { ws, generateCode, EXAMPLES, loadXml, render };
+})();
+</script>
+</body>
+</html>
