@@ -214,6 +214,7 @@
         <li><b>■ 정지</b>를 누르면 프로그램이 멈추고 모든 모터가 꺼집니다.</li>
       </ol>
       <div class="note">🌐 Wombat Wi‑Fi에는 인터넷이 없어서, 접속하는 동안 컴퓨터의 인터넷이 끊깁니다. 이 웹앱 파일은 필요한 것을 모두 담고 있어 <b>인터넷 없이도</b> 열리고 동작합니다.<br>인터넷도 함께 쓰려면 Wombat은 <b>랜선</b>, 인터넷은 학교 Wi‑Fi로 연결하세요. 이때 인터넷이 안 되면 컴퓨터의 유선 랜 설정에서 IP를 <b>수동</b>으로 <code>192.168.124.10</code>, 서브넷 <code>255.255.255.0</code>으로 넣고 <b>게이트웨이는 비워 두세요</b>. (Wombat이 자신을 기본 게이트웨이로 알려 주기 때문에 인터넷 요청이 Wombat 쪽으로 가는 경우가 있습니다.)</div>
+      <div class="note">🔁 <b>예전 펌웨어(Harrogate)인 Wombat</b>은 브라우저가 다른 주소에서 직접 접속하는 것을 막습니다. 이때는 함께 제공되는 <b>연결 도우미</b>를 실행하세요. Mac은 <code>웜뱃연결.command</code>, Windows는 <code>웜뱃연결.bat</code>를 더블클릭하면 크롬에 웹앱이 <code>http://localhost:8765</code>로 열리고, 그대로 연결·실행할 수 있습니다. (Wombat 프로그래밍 화면의 Information에 "Harrogate version"이 보이면 예전 펌웨어입니다.)</div>
       <div class="note">⚠️ 연결한 프로젝트의 <code>main.py</code>는 이 웹앱의 코드로 <b>덮어써집니다</b>. 손으로 작성한 코드가 있는 프로젝트 말고, 블록코딩용 프로젝트를 따로 만들어 연결하세요.</div>
 
       <h2 style="margin-top:22px">3. 연결 없이 쓰기 (코드 복사)</h2>
@@ -259,6 +260,7 @@
     <h2 id="connTitle">🤖 Wombat 연결</h2>
     <p class="sub">컴퓨터를 Wombat의 Wi‑Fi(또는 랜선)에 먼저 연결하세요. 주소는 Wombat 화면 <b>About</b>의 WiFi/LAN 줄에 나옵니다.</p>
     <div class="msg info" id="artifactNote">claude.ai에 게시된 페이지에서는 보안 정책 때문에 로봇에 직접 접속할 수 없습니다. 아래 버튼으로 웹앱 파일을 내려받아 <b>크롬에서 열면</b> 바로 실행 기능을 쓸 수 있습니다.<br><button class="dbtn primary" id="btnGetHtml" style="margin-top:10px">웹앱 HTML 파일 내려받기</button></div>
+    <div class="msg info" id="viaNote" style="display:none"></div>
     <label for="ipIn">Wombat 주소</label>
     <div class="quick"><button class="chip" data-ip="192.168.125.1">📶 Wi‑Fi · 192.168.125.1</button><button class="chip" data-ip="192.168.124.1">🔌 랜선 직접 연결 · 192.168.124.1</button></div>
     <div class="row"><input class="ip" id="ipIn" value="192.168.125.1" inputmode="decimal" autocomplete="off" spellcheck="false"><span>:</span><input class="port" id="portIn" value="8888" inputmode="numeric"><button class="dbtn" id="btnTest">연결 확인</button></div>
@@ -3271,7 +3273,10 @@ const varGlobals = ws => {
 };
 G.wombat_start = b => {
   const body = P.statementToCode(b, 'DO') || P.INDENT + 'pass\n';
-  return 'def main():\n' + varGlobals(b.workspace) + body + '\n\nif __name__ == "__main__":\n' + P.INDENT + 'main()\n';
+  return 'def main():\n' + varGlobals(b.workspace) + body + '\n\nif __name__ == "__main__":\n'
+    + P.INDENT + 'try:\n' + P.INDENT + P.INDENT + 'main()\n'
+    + P.INDENT + 'except KeyboardInterrupt:  # [정지] 버튼\n' + P.INDENT + P.INDENT + 'pass\n'
+    + P.INDENT + 'finally:\n' + P.INDENT + P.INDENT + 'ao()  # 프로그램이 끝나거나 정지되면 모든 모터 끄기\n';
 };
 G.wombat_wait_for_light = b => line(`wait_for_light(${b.getFieldValue('PORT')})`);
 G.wombat_shut_down_in = b => line(`shut_down_in(${v(b,'SEC')})`);
@@ -3696,36 +3701,53 @@ $('#btnNew').onclick = () => {
   toast('새 프로젝트를 시작합니다');
 };
 
-/* ---------- Wombat 연결 (KIPR Software Suite / Voldigate HTTP API) ----------
-   Wombat의 IDE 서버(포트 8888)가 제공하는 기능을 그대로 사용합니다.
-   GET  /get-users                       → 사용자 목록
-   GET  /get-projects?userName=          → 프로젝트 목록 (projectLanguage)
-   POST /save-file-content               → {filePath, fileContents}
-   POST /compile-code                    → {userName, projectName, fileName, activeLanguage}
-   GET  /run-code?…                      → 실행 출력 스트림(Server-Sent Events)
-   POST /stop-code                       → 정지 + 모든 모터 끄기                         */
+/* ---------- Wombat 연결 ----------
+   Wombat의 IDE 서버(포트 8888)를 자동으로 알아보고 두 종류 모두 지원합니다.
+   ① Voldigate (최신 WombatOS)
+      GET /get-users · GET /get-projects?userName= · POST /save-file-content {filePath, fileContents}
+      POST /compile-code · GET /run-code (Server-Sent Events) · POST /stop-code
+   ② Harrogate (예전 펌웨어, 예: Harrogate 1.0.1) — 다른 주소의 접속(CORS)을 허용하지 않으므로
+      같은 주소에서 열거나(Wombat에 올린 웹앱) 연결 도우미(wombat-relay.py)를 통해 연결합니다.
+      GET /api/projects/users · GET /api/projects/<user> · PUT·POST /api/fs/<경로> {content(base64), encoding}
+      POST /api/compile {user, name} · POST /api/run {user, name} · DELETE /api/run/current
+      실행 출력: socket.io '/runner' 네임스페이스의 stdout / stderr / ended 이벤트          */
 const KISS_ROOT = '/home/kipr/Documents/KISS';
 const CONN_KEY = 'wombat-blocks-connection-v1';
-const conn = { ip:'192.168.125.1', port:'8888', user:'', project:'', ok:false };
-try { Object.assign(conn, JSON.parse(localStorage.getItem(CONN_KEY) || '{}'), { ok:false }); } catch (e) {}
+const conn = { ip:'192.168.125.1', port:'8888', user:'', project:'', ok:false, type:'' };
+try { Object.assign(conn, JSON.parse(localStorage.getItem(CONN_KEY) || '{}'), { ok:false, type:'' }); } catch (e) {}
 const saveConn = () => { try { localStorage.setItem(CONN_KEY, JSON.stringify({ ip:conn.ip, port:conn.port, user:conn.user, project:conn.project })); } catch (e) {} };
-const baseUrl = (ip = conn.ip, port = conn.port) => `http://${ip.trim()}:${String(port).trim() || '8888'}`;
+// 접속 방식: direct(웹앱 → Wombat 주소로 직접) / relay(연결 도우미를 거침) / same(웹앱이 Wombat에서 열림)
+let via = 'direct';
+const directBase = (ip = conn.ip, port = conn.port) => `http://${String(ip).trim()}:${String(port).trim() || '8888'}`;
+const baseUrl = () => via === 'direct' ? directBase() : '';
+const targetLabel = () => via === 'same' ? location.host : `${conn.ip}:${conn.port}`;
+const SERVER_NAME = { voldigate:'KIPR Software Suite', harrogate:'Harrogate' };
 
 async function api(path, { method = 'GET', body, timeout = 8000, base } = {}){
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeout);
   try {
-    const opts = { method, signal:ac.signal };
+    const opts = { method, signal:ac.signal, cache:'no-store' };
     if (body !== undefined) { opts.headers = { 'Content-Type':'application/json' }; opts.body = JSON.stringify(body); }
-    const r = await fetch((base || baseUrl()) + path, opts);
+    const r = await fetch((base !== undefined ? base : baseUrl()) + path, opts);
     const text = await r.text();
     let data = text; try { data = JSON.parse(text); } catch (e) {}
+    if (r.status === 502 && data && data.relay_error) { const err = new Error(data.error); err.relay = true; throw err; }
     return { ok:r.ok, status:r.status, data };
   } finally { clearTimeout(t); }
 }
-const netErrorText = e => (e && e.name === 'AbortError')
-  ? 'Wombat이 응답하지 않습니다. 주소가 맞는지, 컴퓨터가 Wombat Wi‑Fi(또는 랜선)에 연결되어 있는지 확인하세요.'
-  : 'Wombat에 접속할 수 없습니다. ① 컴퓨터가 Wombat Wi‑Fi/랜선에 연결되어 있는지 ② 주소(About 화면의 IP)가 맞는지 ③ 크롬이 "로컬 네트워크 접근"을 물었다면 허용했는지 확인하세요.';
+const netErrorText = e => {
+  if (e && e.relay) return `연결 도우미가 Wombat에 접속하지 못했습니다. 컴퓨터가 Wombat Wi‑Fi/랜선에 연결되어 있는지, 주소(About 화면의 IP)가 맞는지 확인하세요. (${esc(e.message)})`;
+  if (e && e.name === 'AbortError') return 'Wombat이 응답하지 않습니다. 주소가 맞는지, 컴퓨터가 Wombat Wi‑Fi(또는 랜선)에 연결되어 있는지 확인하세요.';
+  return 'Wombat에 접속할 수 없습니다. ① 컴퓨터가 Wombat Wi‑Fi/랜선에 연결되어 있는지 ② 주소(About 화면의 IP)가 맞는지 ③ 크롬이 "로컬 네트워크 접근"을 물었다면 허용했는지 확인하세요.';
+};
+// UTF-8 문자열 → base64 (한글 포함)
+function b64utf8(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
 
 // 실행 결과 콘솔
 const consoleOut = $('#consoleOut');
@@ -3764,28 +3786,182 @@ function showTab(id){
   document.querySelectorAll('.view').forEach(vw => vw.classList.toggle('on', vw.id === id));
 }
 
+let busy = false, running = false, stopRequested = false, stopQuiet = false, stopLogged = false;
 function updateConnUI(){
   const btn = $('#btnConn');
   btn.classList.toggle('connected', conn.ok);
   $('#connLbl').textContent = conn.ok ? `${conn.user} / ${conn.project}` : 'Wombat 연결';
-  btn.title = conn.ok ? `연결됨: ${baseUrl()} · ${conn.user} / ${conn.project} (누르면 변경)` : 'Wombat 로봇 연결 설정';
+  btn.title = conn.ok ? `연결됨: ${targetLabel()} (${SERVER_NAME[conn.type] || ''}) · ${conn.user} / ${conn.project} (누르면 변경)` : 'Wombat 로봇 연결 설정';
   $('#btnRun').disabled = !conn.ok || busy;
   $('#btnSendOnly').disabled = !conn.ok || busy || running;
   $('#btnStop').disabled = !conn.ok || (!running && !busy);
-  $('#consoleTarget').textContent = conn.ok ? `🤖 ${baseUrl()} · ${conn.user} / ${conn.project} / src/main.py` : '연결된 Wombat 없음';
+  $('#consoleTarget').textContent = conn.ok ? `🤖 ${targetLabel()} · ${SERVER_NAME[conn.type] || ''}${via === 'relay' ? ' · 연결 도우미' : ''} · ${conn.user} / ${conn.project} / src/main.py` : '연결된 Wombat 없음';
   $('#tabConsole').classList.toggle('live', running);
+}
+
+/* ---- 서버 종류별 처리 ---- */
+// 실행 출력 한 줄 처리(공통)
+function outLine(l, isErr){
+  if (!l || l.startsWith('[core/wombat]')) return;
+  const m = l.match(/^(Process|Program) exited with code\s*(.*)$/);
+  if (m) {
+    if (stopRequested) { if (!stopQuiet && !stopLogged) { stopLogged = true; clog('■ 정지했습니다 (모든 모터 꺼짐)', 'c-sys'); } return; }
+    const code = m[2].replace(/\D+/g, '');
+    clog(code === '0' ? '🏁 프로그램이 끝났습니다 (종료 코드 0)' : `⚠️ 프로그램이 종료되었습니다 (종료 코드 ${code || '?'})`, code === '0' ? 'c-ok' : 'c-err');
+    return;
+  }
+  clog(l, isErr || l.startsWith('ERROR:') ? 'c-err' : '');
+}
+
+const Voldigate = {
+  async users(base){
+    const r = await api('/get-users', { base, timeout:6000 });
+    return r.ok && r.data && Array.isArray(r.data.users) ? r.data.users.map(u => u.userName).filter(Boolean) : null;
+  },
+  async projects(user){
+    const r = await api('/get-projects?userName=' + encodeURIComponent(user));
+    const all = r.ok && r.data && Array.isArray(r.data.projects) ? r.data.projects : [];
+    return { all:all.length, python: all.filter(p => p && p.projectName && p.projectLanguage === 'python').map(p => ({ name:p.projectName, raw:p })) };
+  },
+  async save(code){
+    const s = await api('/save-file-content', { method:'POST', body:{ filePath:`${KISS_ROOT}/${conn.user}/${conn.project}/src/main.py`, fileContents:code } });
+    if (!s.ok) throw new Error(`저장 실패 (응답 ${s.status}) ${typeof s.data === 'string' ? s.data : JSON.stringify(s.data)}`);
+  },
+  async compile(){
+    const c = await api('/compile-code', { method:'POST', timeout:30000, body:{ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' } });
+    if (c.ok && c.data && c.data.message === 'successful') return { ok:true };
+    return { ok:false, error:(c.data && (c.data.error || c.data.details)) || `응답 ${c.status}` };
+  },
+  es:null,
+  async run(done){
+    const q = new URLSearchParams({ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' });
+    let ended = false;
+    const es = this.es = new EventSource(`${baseUrl()}/run-code?${q}`);
+    es.onmessage = ev => String(ev.data).split('\n').forEach(l => outLine(l));
+    es.addEventListener('end', () => { ended = true; done(); });
+    es.onerror = () => { if (!ended && running) clog('연결이 끊겼습니다. Wombat이 꺼졌거나 Wi‑Fi가 끊겼을 수 있습니다.', 'c-err'); done(); };
+  },
+  close(){ if (this.es) { this.es.close(); this.es = null; } },
+  async stop(){ await api('/stop-code', { method:'POST', timeout:5000 }); },
+};
+
+const Harrogate = {
+  projectsByName:{},
+  async users(base){
+    const r = await api('/api/projects/users', { base, timeout:6000 });
+    if (!r.ok || !r.data || typeof r.data !== 'object') return null;
+    return Array.isArray(r.data) ? r.data : Object.keys(r.data);
+  },
+  async projects(user){
+    const r = await api('/api/projects/' + encodeURIComponent(user));
+    const all = r.ok && r.data && Array.isArray(r.data.projects) ? r.data.projects : [];
+    const py = all.filter(p => p && p.name && p.parameters && String(p.parameters.language).toLowerCase() === 'python');
+    this.projectsByName = {};
+    py.forEach(p => { this.projectsByName[p.name] = p; });
+    return { all:all.length, python: py.map(p => ({ name:p.name, raw:p })) };
+  },
+  async save(code){
+    // 저장 직전에 프로젝트 정보를 다시 읽어 main.py 위치를 확인
+    await this.projects(conn.user);
+    const p = this.projectsByName[conn.project];
+    if (!p) throw new Error(`"${conn.project}" 프로젝트를 찾을 수 없습니다. 연결 설정을 다시 확인하세요.`);
+    const body = { content:b64utf8(code), encoding:'utf8' };
+    const main = (p.source_files || []).find(f => f && f.name === 'main.py');
+    let r;
+    if (main && main.links && main.links.self) r = await api(main.links.self.href, { method:'PUT', body });
+    else if (p.links && p.links.src_directory) r = await api(p.links.src_directory.href, { method:'POST', body:{ name:'main.py', type:'file', ...body } });
+    else throw new Error('프로젝트의 src 폴더 위치를 알 수 없습니다.');
+    if (!r.ok) throw new Error(`저장 실패 (응답 ${r.status}) ${typeof r.data === 'string' ? r.data.slice(0, 200) : JSON.stringify(r.data)}`);
+  },
+  async compile(){
+    const c = await api('/api/compile', { method:'POST', timeout:30000, body:{ user:conn.user, name:conn.project } });
+    const res = c.data && c.data.result;
+    if (c.ok && res && !res.error) return { ok:true };
+    const err = res ? [res.stderr, res.stdout].filter(Boolean).join('\n') || JSON.stringify(res.error) : (c.data && c.data.error) || `응답 ${c.status}`;
+    return { ok:false, error:err };
+  },
+  socket:null, buf:{ out:'', err:'' }, onEnd:null,
+  loadSocketIO(){
+    if (window.io) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = `${baseUrl()}/socket.io/socket.io.js`;
+      s.onload = () => window.io ? res() : rej(new Error('socket.io를 불러오지 못했습니다'));
+      s.onerror = () => rej(new Error('Wombat에서 실행 출력 모듈(socket.io)을 불러오지 못했습니다'));
+      document.head.appendChild(s);
+    });
+  },
+  async connectOutput(){
+    await this.loadSocketIO();
+    if (this.socket && this.socket.connected) return;
+    if (!this.socket) {
+      this.socket = window.io(`${baseUrl()}/runner`, { transports:['polling'], reconnection:true });
+      const feed = (key, isErr) => d => {
+        this.buf[key] += String(d);
+        const parts = this.buf[key].split('\n');
+        this.buf[key] = parts.pop();
+        parts.forEach(l => outLine(l, isErr));
+        // 줄바꿈 없이 끝나는 "Program exited with code N" 같은 조각도 바로 처리
+        if (/^(Program|Process) exited with code/.test(this.buf[key])) { outLine(this.buf[key], isErr); this.buf[key] = ''; }
+      };
+      this.socket.on('stdout', feed('out', false));
+      this.socket.on('stderr', feed('err', true));
+      this.socket.on('ended', () => {
+        ['out', 'err'].forEach(k => { if (this.buf[k]) { outLine(this.buf[k], k === 'err'); this.buf[k] = ''; } });
+        if (this.onEnd) { const f = this.onEnd; this.onEnd = null; f(); }
+      });
+    }
+    // 연결될 때까지 최대 5초 대기
+    await new Promise(res => {
+      if (this.socket.connected) return res();
+      const t = setTimeout(res, 5000);
+      this.socket.once('connect', () => { clearTimeout(t); res(); });
+    });
+    if (!this.socket.connected) throw new Error('Wombat 실행 출력 연결이 되지 않습니다. 잠시 후 다시 시도하세요.');
+  },
+  async run(done){
+    await this.connectOutput();
+    this.onEnd = done;
+    let r = await api('/api/run', { method:'POST', body:{ user:conn.user, name:conn.project } });
+    if (r.status === 409) { // 다른 프로그램이 실행 중 → 멈추고 다시
+      await api('/api/run/current', { method:'DELETE' }); await new Promise(x => setTimeout(x, 600));
+      r = await api('/api/run', { method:'POST', body:{ user:conn.user, name:conn.project } });
+    }
+    if (!r.ok) { this.onEnd = null; throw new Error(`실행 실패 (응답 ${r.status}) ${r.data && r.data.error ? r.data.error : ''}`); }
+  },
+  close(){ this.onEnd = null; },
+  async stop(){ await api('/api/run/current', { method:'DELETE', timeout:5000 }); },
+};
+const backend = () => conn.type === 'harrogate' ? Harrogate : Voldigate;
+
+// 서버 종류 알아보기
+async function detectServer(base){
+  let lastErr = null;
+  try { const u = await Voldigate.users(base); if (u) return { type:'voldigate', users:u }; } catch (e) { lastErr = e; }
+  try { const u = await Harrogate.users(base); if (u) return { type:'harrogate', users:u }; } catch (e) { lastErr = e; }
+  if (base) { // 다른 주소에서 직접 연결: 서버는 살아 있는데 브라우저가 막는지 확인
+    try { await fetch(base + '/api/projects/users', { mode:'no-cors', cache:'no-store' }); return { type:'cors-blocked' }; } catch (e) {}
+  }
+  throw lastErr || new Error('unknown');
 }
 
 // 연결 대화상자
 const modal = $('#connModal'), connMsg = $('#connMsg'), userSel = $('#userSel'), projSel = $('#projSel');
 function setMsg(text, kind){ connMsg.className = 'msg show ' + kind; connMsg.innerHTML = text; }
 function openConn(){
-  $('#ipIn').value = conn.ip; $('#portIn').value = conn.port;
+  $('#ipIn').value = via === 'same' ? location.hostname : conn.ip;
+  $('#portIn').value = via === 'same' ? (location.port || '80') : conn.port;
+  $('#ipIn').disabled = $('#portIn').disabled = via === 'same';
+  document.querySelectorAll('.chip').forEach(c => c.disabled = via === 'same');
   $('#artifactNote').style.display = inArtifact ? 'block' : 'none';
+  $('#viaNote').style.display = via === 'direct' ? 'none' : 'block';
+  $('#viaNote').innerHTML = via === 'relay'
+    ? '🔁 <b>연결 도우미</b>를 통해 연결합니다. 주소를 바꾸면 도우미가 그 Wombat으로 연결합니다.'
+    : `🤖 이 웹앱은 Wombat(<b>${esc(location.host)}</b>)에서 열렸습니다. 주소 입력 없이 바로 연결합니다.`;
   connMsg.className = 'msg';
   syncChips();
   modal.hidden = false;
-  if (!inArtifact) setTimeout(() => $('#ipIn').focus(), 50);
+  if (!inArtifact && via !== 'same') setTimeout(() => $('#ipIn').focus(), 50);
 }
 const closeConn = () => { modal.hidden = true; };
 $('#btnConn').onclick = openConn;
@@ -3793,44 +3969,51 @@ $('#btnConnClose').onclick = closeConn;
 modal.addEventListener('click', e => { if (e.target === modal) closeConn(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeConn(); });
 
-let foundProjects = [];
+let detected = null;
 async function testConnection(){
   const ip = $('#ipIn').value.trim(), port = $('#portIn').value.trim() || '8888';
-  if (!/^[A-Za-z0-9.\-]+$/.test(ip)) { setMsg('주소 형식이 올바르지 않습니다. 예) 192.168.125.1', 'err'); return; }
   if (inArtifact) { setMsg('게시된 페이지에서는 접속이 막혀 있습니다. 위의 버튼으로 웹앱 파일을 내려받아 크롬에서 열어 주세요.', 'err'); return; }
+  if (via !== 'same' && !/^[A-Za-z0-9.\-]+$/.test(ip)) { setMsg('주소 형식이 올바르지 않습니다. 예) 192.168.124.1', 'err'); return; }
   setMsg('연결 확인 중…', 'info');
   userSel.disabled = projSel.disabled = $('#btnConnOk').disabled = true;
-  let res;
-  try { res = await api('/get-users', { base:baseUrl(ip, port), timeout:6000 }); }
+  if (via === 'relay') {
+    try { await api('/__relay', { method:'POST', base:'', body:{ target:`${ip}:${port}` } }); }
+    catch (e) { setMsg('연결 도우미가 응답하지 않습니다. 도우미 창(터미널)이 켜져 있는지 확인하세요.', 'err'); return; }
+  }
+  try { detected = await detectServer(via === 'direct' ? directBase(ip, port) : ''); }
   catch (e) { setMsg(netErrorText(e), 'err'); return; }
-  const users = res.ok && res.data && Array.isArray(res.data.users) ? res.data.users.map(u => u.userName).filter(Boolean) : null;
-  if (!users) { setMsg(`Wombat에 접속은 됐지만 사용자 목록을 읽지 못했습니다(응답 ${res.status}). Wombat을 최신 WombatOS로 업데이트해 주세요.`, 'err'); return; }
-  conn.ip = ip; conn.port = port; saveConn();
-  if (!users.length) { setMsg(`✅ 연결됨. 아직 사용자가 없습니다. 크롬에서 <b>${esc(baseUrl())}</b>을 열어 사용자와 Python 프로젝트를 먼저 만드세요.`, 'ok'); return; }
+  if (detected.type === 'cors-blocked') {
+    setMsg('Wombat은 찾았지만, 이 Wombat의 IDE(예전 버전 <b>Harrogate</b>)는 브라우저가 다른 주소에서 직접 접속하는 것을 허용하지 않습니다.<br>👉 함께 드린 <b>웜뱃연결</b>(연결 도우미)을 실행해서 웹앱을 여세요. 도우미가 자동으로 크롬에 웹앱을 엽니다. 또는 Wombat을 최신 WombatOS로 업데이트하세요.', 'err');
+    return;
+  }
+  if (via !== 'same') { conn.ip = ip; conn.port = port; saveConn(); }
+  const users = detected.users;
+  const kind = SERVER_NAME[detected.type];
+  if (!users.length) { setMsg(`✅ 연결됨 (${kind}). 아직 사용자가 없습니다. Wombat의 프로그래밍 화면(주소:8888)에서 사용자와 Python 프로젝트를 먼저 만드세요.`, 'ok'); return; }
   userSel.innerHTML = users.map(u => `<option value="${esc(u)}">${esc(u)}</option>`).join('');
   userSel.disabled = false;
   if (users.includes(conn.user)) userSel.value = conn.user;
-  setMsg(`✅ Wombat에 연결되었습니다. 사용자 ${users.length}명을 찾았습니다.`, 'ok');
+  setMsg(`✅ Wombat에 연결되었습니다 (${kind}). 사용자 ${users.length}명을 찾았습니다.`, 'ok');
   await loadProjects();
 }
 async function loadProjects(){
+  if (!detected) return;
   const user = userSel.value;
   projSel.disabled = true; $('#btnConnOk').disabled = true;
   projSel.innerHTML = '<option>불러오는 중…</option>';
+  const B = detected.type === 'harrogate' ? Harrogate : Voldigate;
   let res;
-  try { res = await api('/get-projects?userName=' + encodeURIComponent(user)); }
+  try { res = await B.projects(user); }
   catch (e) { setMsg(netErrorText(e), 'err'); return; }
-  const all = res.ok && res.data && Array.isArray(res.data.projects) ? res.data.projects : [];
-  foundProjects = all.filter(p => p && p.projectName && p.projectLanguage === 'python');
-  if (!foundProjects.length) {
+  if (!res.python.length) {
     projSel.innerHTML = '<option>Python 프로젝트 없음</option>';
-    setMsg(`"${esc(user)}" 사용자에게 Python 프로젝트가 없습니다. 크롬에서 <b>${esc(baseUrl())}</b>을 열어 언어를 Python으로 골라 새 프로젝트를 만든 뒤 다시 연결 확인을 누르세요.` + (all.length ? ` (C 등 다른 언어 프로젝트 ${all.length}개는 목록에서 뺐습니다)` : ''), 'info');
+    setMsg(`"${esc(user)}" 사용자에게 Python 프로젝트가 없습니다. Wombat의 프로그래밍 화면(주소:8888)에서 언어를 Python으로 골라 새 프로젝트를 만든 뒤 다시 연결 확인을 누르세요.` + (res.all ? ` (C 등 다른 언어 프로젝트 ${res.all}개는 목록에서 뺐습니다)` : ''), 'info');
     return;
   }
-  projSel.innerHTML = foundProjects.map(p => `<option value="${esc(p.projectName)}">${esc(p.projectName)}</option>`).join('');
-  if (foundProjects.some(p => p.projectName === conn.project) && user === conn.user) projSel.value = conn.project;
+  projSel.innerHTML = res.python.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if (res.python.some(p => p.name === conn.project) && user === conn.user) projSel.value = conn.project;
   projSel.disabled = false; $('#btnConnOk').disabled = false;
-  setMsg(`✅ 연결됨 · "${esc(user)}" 사용자의 Python 프로젝트 ${foundProjects.length}개. 연결할 프로젝트를 고르세요.`, 'ok');
+  setMsg(`✅ 연결됨 (${SERVER_NAME[detected.type]}) · "${esc(user)}" 사용자의 Python 프로젝트 ${res.python.length}개. 연결할 프로젝트를 고르세요.`, 'ok');
 }
 $('#btnTest').onclick = testConnection;
 const syncChips = () => document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.ip === $('#ipIn').value.trim()));
@@ -3838,11 +4021,14 @@ document.querySelectorAll('.chip').forEach(c => c.onclick = () => { $('#ipIn').v
 $('#ipIn').addEventListener('input', syncChips);
 $('#ipIn').addEventListener('keydown', e => { if (e.key === 'Enter') testConnection(); });
 userSel.onchange = loadProjects;
-$('#btnConnOk').onclick = () => {
-  conn.user = userSel.value; conn.project = projSel.value; conn.ok = true; saveConn(); updateConnUI(); closeConn();
+$('#btnConnOk').onclick = async () => {
+  if (running) await stopProgram(true);
+  backend().close();
+  conn.user = userSel.value; conn.project = projSel.value; conn.type = detected.type; conn.ok = true; saveConn(); updateConnUI(); closeConn();
   showTab('consoleView');
-  clog(`🤖 ${baseUrl()} 의 ${conn.user} / ${conn.project} 프로젝트에 연결했습니다. [▶ 실행]을 누르세요.`, 'c-ok');
+  clog(`🤖 ${targetLabel()} (${SERVER_NAME[conn.type]}) 의 ${conn.user} / ${conn.project} 프로젝트에 연결했습니다. [▶ 실행]을 누르세요.`, 'c-ok');
   toast('Wombat에 연결했습니다');
+  if (conn.type === 'harrogate') Harrogate.connectOutput().catch(e => clog('⚠️ ' + e.message, 'c-err'));
 };
 $('#btnDisconnect').onclick = () => { if (running) stopProgram(); conn.ok = false; updateConnUI(); closeConn(); toast('연결을 해제했습니다'); };
 
@@ -3862,19 +4048,15 @@ $('#btnGetHtml').onclick = async () => {
 };
 
 // 보내기 → 문법 검사 → 실행
-let busy = false, running = false, es = null, stopRequested = false, stopQuiet = false, stopLogged = false;
 async function sendAndCompile(){
-  const filePath = `${KISS_ROOT}/${conn.user}/${conn.project}/src/main.py`;
+  const B = backend();
   clog(`⬆ main.py 보내는 중… (${currentCode.split('\n').length}줄)`, 'c-sys');
-  const s = await api('/save-file-content', { method:'POST', body:{ filePath, fileContents:currentCode } });
-  if (!s.ok) throw new Error(`저장 실패 (응답 ${s.status}) ${typeof s.data === 'string' ? s.data : JSON.stringify(s.data)}`);
+  await B.save(currentCode);
   clog('🔎 문법 검사(컴파일) 중…', 'c-sys');
-  const c = await api('/compile-code', { method:'POST', timeout:30000, body:{ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' } });
-  const msg = c.data && c.data.message;
-  if (!c.ok || msg !== 'successful') {
-    const err = (c.data && (c.data.error || c.data.details)) || `응답 ${c.status}`;
+  const c = await B.compile();
+  if (!c.ok) {
     clog('❌ 문법 오류가 있어 실행하지 않았습니다:', 'c-err');
-    clog(String(err).trim(), 'c-err');
+    clog(String(c.error).trim(), 'c-err');
     return false;
   }
   clog('✅ 문법 검사 통과', 'c-ok');
@@ -3887,34 +4069,23 @@ async function runProgram(sendOnly = false){
   clog(`──────── ${new Date().toLocaleTimeString('ko-KR')} ────────`, 'c-dim');
   try {
     const ok = await sendAndCompile();
-    if (!ok || sendOnly) { if (ok) clog('Wombat의 Programs 화면이나 Software Suite에서도 실행할 수 있습니다.', 'c-dim'); return; }
+    if (!ok || sendOnly) { if (ok) clog('Wombat의 Programs 화면이나 프로그래밍 화면에서도 실행할 수 있습니다.', 'c-dim'); return; }
     clog('▶ 실행 시작', 'c-sys');
-    const q = new URLSearchParams({ userName:conn.user, projectName:conn.project, fileName:'main.py', activeLanguage:'python' });
-    let ended = false;
     stopRequested = false;
-    es = new EventSource(`${baseUrl()}/run-code?${q}`);
-    running = true;
-    es.onmessage = ev => {
-      String(ev.data).split('\n').forEach(l => {
-        if (!l || l.startsWith('[core/wombat]')) return;
-        if (l.startsWith('Process exited with code') && stopRequested) { if (!stopQuiet && !stopLogged) { stopLogged = true; clog('■ 정지했습니다 (모든 모터 꺼짐)', 'c-sys'); } return; }
-        if (l.startsWith('Process exited with code')) { const code = l.replace(/\D+/g, ''); clog(code === '0' ? '🏁 프로그램이 끝났습니다 (종료 코드 0)' : `⚠️ 프로그램이 종료되었습니다 (종료 코드 ${code || '?'})`, code === '0' ? 'c-ok' : 'c-err'); return; }
-        clog(l, l.startsWith('ERROR:') ? 'c-err' : '');
-      });
-    };
-    es.addEventListener('end', () => { ended = true; finishRun(); });
-    es.onerror = () => { if (!ended && running) clog('연결이 끊겼습니다. Wombat이 꺼졌거나 Wi‑Fi가 끊겼을 수 있습니다.', 'c-err'); finishRun(); };
+    running = true; updateConnUI();
+    await backend().run(finishRun);
   } catch (e) {
-    clog('❌ ' + (e && (e.name === 'AbortError' || e instanceof TypeError) ? netErrorText(e) : e.message), 'c-err');
+    running = false;
+    clog('❌ ' + (e && (e.name === 'AbortError' || e instanceof TypeError || e.relay) ? netErrorText(e).replace(/<[^>]+>/g, '') : e.message), 'c-err');
   } finally { busy = false; updateConnUI(); }
 }
-function finishRun(){ if (es) { es.close(); es = null; } running = false; updateConnUI(); }
+function finishRun(){ backend().close(); running = false; updateConnUI(); }
 async function stopProgram(quiet = false){
   if (!conn.ok) return;
   stopRequested = true; stopQuiet = quiet; stopLogged = false;
-  try { await api('/stop-code', { method:'POST', timeout:5000 }); }
+  try { await backend().stop(); }
   catch (e) { if (!quiet) clog('정지 명령을 보내지 못했습니다. Wombat 화면에서 직접 정지하세요.', 'c-err'); }
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, conn.type === 'harrogate' ? 400 : 150));
   finishRun();
   if (!quiet && !stopLogged) { stopLogged = true; clog('■ 정지했습니다 (모든 모터 꺼짐)', 'c-sys'); }
 }
@@ -3922,6 +4093,25 @@ $('#btnRun').onclick = () => runProgram(false);
 $('#btnSendOnly').onclick = () => runProgram(true);
 $('#btnStop').onclick = () => stopProgram(false);
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && conn.ok) { e.preventDefault(); runProgram(false); } });
+
+// 웹앱이 어디서 열렸는지 확인: 연결 도우미(localhost) / Wombat 자체 / 파일
+(async () => {
+  if (inArtifact || !/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await api('/__relay', { base:'', timeout:2500 });
+    if (r.ok && r.data && r.data.relay) {
+      via = 'relay';
+      const [h, p] = String(r.data.target).split(':');
+      if (h) { conn.ip = h; conn.port = p || '8888'; }
+      updateConnUI();
+      return;
+    }
+  } catch (e) {}
+  try {
+    const d = await detectServer('');
+    if (d && d.type !== 'cors-blocked') { via = 'same'; updateConnUI(); }
+  } catch (e) {}
+})();
 updateConnUI();
 
 /* ---------- 탭·글자 크기·분할선 ---------- */

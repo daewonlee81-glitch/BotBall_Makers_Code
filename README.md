@@ -6,6 +6,8 @@ KIPR **Wombat** 로봇을 크롬에서 **한글 블록**으로 코딩하는 웹�
 - 파일 하나(`index.html`)로 동작하며, 라이브러리를 모두 담고 있어 **인터넷 없이도** 열립니다.
 - 생성 코드는 KIPR Software Suite의 Python 템플릿(`from kipr import *`)을 따릅니다.
 
+📘 **자세한 사용 방법: [docs/사용설명서.md](docs/사용설명서.md)** — 연결(Wi‑Fi·랜선), 인터넷 같이 쓰기, 연결 도우미, 프로젝트 만들기, 실행, 문제 해결
+
 ## 주요 기능
 
 - **한글 블록**: 시작(봇볼), 모터, 서보, 센서, 버튼, 시간, 화면·소리, 카메라, Create 3, Create(구형) + 논리·반복·수학·텍스트·변수·함수
@@ -25,7 +27,27 @@ KIPR **Wombat** 로봇을 크롬에서 **한글 블록**으로 코딩하는 웹�
 3. **▶ 실행**(Ctrl+Enter) / **■ 정지**.
 
 > ⚠️ 연결한 프로젝트의 `src/main.py`는 웹앱 코드로 **덮어써집니다.** 블록코딩용 프로젝트를 따로 만들어 쓰세요.
-> 최신 WombatOS(IDE: Voldigate) 기준입니다. 예전 펌웨어(harrogate)에서는 동작하지 않습니다.
+> 프로그램이 끝나거나 [■ 정지]를 누르면 생성 코드의 `finally: ao()`로 모든 모터가 꺼집니다.
+
+### Wombat IDE 두 종류 자동 지원
+
+| Wombat IDE | 확인 방법 | 연결 방법 |
+|---|---|---|
+| **KIPR Software Suite (Voldigate)** — 최신 WombatOS | `주소:8888/get-users`가 JSON | `index.html`을 크롬에서 바로 열어 연결 |
+| **Harrogate** — 예전 펌웨어 (예: Harrogate 1.0.1) | 프로그래밍 화면 Information에 "Harrogate version" | **연결 도우미** 필요 (아래) |
+
+Harrogate는 CORS 헤더를 보내지 않아서, 다른 주소(파일·localhost)에서 연 웹앱의 요청을 브라우저가 막습니다.
+
+### 연결 도우미 (wombat-relay.py)
+
+웹앱을 `http://localhost:8765`에서 열고 요청을 Wombat으로 그대로 전달합니다(Python 3 표준 라이브러리만 사용).
+Harrogate·Voldigate 모두 동작합니다.
+
+- Mac: `웜뱃연결.command` 더블클릭 (처음엔 우클릭 → 열기)
+- Windows: `웜뱃연결.bat` 더블클릭
+- 직접: `python3 wombat-relay.py 192.168.124.1`
+
+웹앱을 Wombat의 Harrogate `public` 폴더(`/home/kipr/harrogate/public/`)에 올려 `주소:8888/wombat-blocks.html`로 열어도 같은 주소가 되어 도우미 없이 동작합니다(웹앱이 자동 인식).
 
 ### 연결 방법
 
@@ -50,6 +72,8 @@ build.py       app.src.html + Blockly → index.html (라이브러리·아이콘
 index.html     빌드 결과물 (배포용 단일 파일)
 test/          자동 테스트 (Playwright)
 mock/          Wombat IDE(Voldigate) 모의 서버 + KIPR 라이브러리 스텁
+mock-harrogate/ 예전 Wombat IDE(Harrogate 1.0.1) 모의 서버 (CORS 없음, socket.io 1.4.8)
+wombat-relay.py 연결 도우미 · 웜뱃연결.command(Mac) · 웜뱃연결.bat(Windows)
 ```
 
 ## 빌드
@@ -70,9 +94,14 @@ python3 test/var.py                                     # 한글 변수·함수 
 node mock/server.js &                                   # 모의 Wombat (127.0.0.1:8899)
 python3 test/e2e.py                                     # 연결·실행·정지·문법오류 표시
 python3 test/offline.py                                 # 인터넷 차단 상태에서 로딩
+(cd mock-harrogate && npm install && node server.js 8898 &)   # 모의 Harrogate
+WOMBAT_RELAY_NO_BROWSER=1 python3 wombat-relay.py 127.0.0.1:8898 &
+python3 test/e2e_relay.py                               # 직접(CORS 차단 안내)·도우미(Harrogate/Voldigate) 연결·실행·정지
 ```
 
-## 사용한 Wombat IDE API (Voldigate, 포트 8888)
+## 사용한 Wombat IDE API (포트 8888)
+
+**Voldigate**
 
 | 기능 | 요청 |
 |---|---|
@@ -83,9 +112,20 @@ python3 test/offline.py                                 # 인터넷 차단 상�
 | 실행(스트림) | `GET /run-code?userName&projectName&fileName&activeLanguage=python` |
 | 정지 | `POST /stop-code` |
 
+**Harrogate**
+
+| 기능 | 요청 |
+|---|---|
+| 사용자 목록 | `GET /api/projects/users` |
+| 프로젝트 목록 | `GET /api/projects/<user>` (`parameters.language`, `source_files`, `links.src_directory`) |
+| 코드 저장 | `PUT /api/fs/<경로>/main.py` 또는 `POST /api/fs/<src 폴더>` `{content(base64), encoding:'utf8'}` |
+| 문법 검사 | `POST /api/compile` `{user, name}` → `result.{stdout, stderr, error}` |
+| 실행 | `POST /api/run` `{user, name}` · 출력: socket.io `/runner`의 `stdout`·`stderr`·`ended` |
+| 정지 | `DELETE /api/run/current` (SIGINT) |
+
 ## 현재 상태
 
-- 모의 서버와 헤드리스 크롬으로 검증했습니다. **실제 Wombat 실기 테스트는 진행 전**입니다.
+- 모의 서버(Voldigate·Harrogate)와 헤드리스 크롬으로 검증했습니다. 실제 Wombat(Harrogate 1.0.1, 펌웨어 31.2.0)에서 랜선 연결·ping까지 확인했고, 연결 도우미를 통한 실행은 실기 확인 중입니다.
 - Create 3 블록은 Wombat 펌웨어의 Python 바인딩 지원 여부를 실기로 확인해야 합니다.
 
 ## 참고 자료
