@@ -67,6 +67,7 @@ https로 호스팅한 페이지는 브라우저 보안 정책(혼합 콘텐츠) 
 ## 폴더 구조
 
 ```
+assets/brand/  이 프로젝트 전용 Botball 로고·아이콘 (탭 아이콘, 홈 화면 아이콘, 링크 미리보기, 상단 로고)
 app.src.html   웹앱 원본 (블록 정의, Python 생성기, UI, Wombat 연결)
 build.py       app.src.html + Blockly → index.html (라이브러리·아이콘 내장)
 index.html     빌드 결과물 (배포용 단일 파일)
@@ -143,4 +144,4 @@ Copyright (C) 2026 KISS Institute for Practical Robotics (KIPR) — https://www.
 **GNU General Public License v3.0 (GPL-3.0-only)** 로 배포됩니다. 전문은 [`LICENSE`](LICENSE), 고지 사항은 [`NOTICE`](NOTICE)를 보세요.
 
 - `index.html`에 포함된 [Blockly](https://github.com/google/blockly)(Google LLC)는 Apache License 2.0을 따릅니다.
-- BOTBALL®, BOTGUY™ 및 관련 디자인은 KISS Institute for Practical Robotics의 상표입니다.
+- BOTBALL®, BOTGUY™ 및 관련 디자인은 KISS Institute for Practical Robotics의 상표입니다. `assets/brand/`의 이미지는 이 프로젝트에서만 사용합니다.

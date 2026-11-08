@@ -12,5 +12,12 @@ for f in ['blockly_compressed.js','blocks_compressed.js','python_compressed.js',
     s = s.replace(tag, f'<script>/* Blockly {VER} {f} — Apache-2.0, https://github.com/google/blockly */\n{js}\n</script>')
 s = s.replace('<script>\n(function(){\n', '<script>window.__WOMBAT_MEDIA__ = ' + json.dumps(media) + ';</script>\n<script>\n(function(){\n', 1)
 assert '__WOMBAT_MEDIA__ = ' in s
+# 브랜드 아이콘 내장 (assets/brand) — 파일 하나로 동작하도록
+BRAND = pathlib.Path('assets/brand')
+for name in ['favicon-32.png', 'favicon-64.png', 'apple-touch-icon.png', 'header-badge.png']:
+    ref = f'assets/brand/{name}'
+    f = BRAND / name
+    if f.exists() and ref in s:
+        s = s.replace(f'"{ref}"', '"data:image/png;base64,' + base64.b64encode(f.read_bytes()).decode() + '"')
 pathlib.Path('index.html').write_text(s, encoding='utf-8')
 print('index.html', len(s.encode())//1024, 'KB')

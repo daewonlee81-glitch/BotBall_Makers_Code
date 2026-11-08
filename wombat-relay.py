@@ -157,9 +157,25 @@ def main():
     try:
         server = QuietServer(('127.0.0.1', PORT), Handler)
     except OSError:
-        print(f'⚠️  포트 {PORT}을(를) 이미 쓰고 있습니다. 연결 도우미가 이미 켜져 있을 수 있습니다.')
-        print(f'    브라우저에서 http://localhost:{PORT} 을 여세요.')
-        webbrowser.open(f'http://localhost:{PORT}/')
+        # 이미 켜진 도우미가 정상인지(응답하는지) 확인
+        alive = False
+        try:
+            c = http.client.HTTPConnection('127.0.0.1', PORT, timeout=2)
+            c.request('GET', '/__relay')
+            alive = c.getresponse().status == 200
+            c.close()
+        except OSError:
+            pass
+        if alive:
+            print(f'ℹ️  연결 도우미가 이미 켜져 있습니다. 브라우저에서 http://localhost:{PORT} 을 여세요.')
+            webbrowser.open(f'http://localhost:{PORT}/')
+        else:
+            print(f'⚠️  포트 {PORT}을(를) 다른 프로그램(또는 Control+Z로 멈춘 도우미)이 쓰고 있습니다.')
+            print('    아래 명령으로 끈 뒤 다시 실행하세요:')
+            if os.name == 'nt':
+                print(f'      for /f "tokens=5" %a in (\'netstat -ano ^| findstr :{PORT}\') do taskkill /F /PID %a')
+            else:
+                print('      pkill -9 -f wombat-relay.py')
         return
     url = f'http://localhost:{PORT}/'
     print('=' * 60)

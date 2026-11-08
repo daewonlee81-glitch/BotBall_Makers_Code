@@ -9,6 +9,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>웜뱃 블록코딩 · KIPR Wombat</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/brand/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<meta name="theme-color" content="#14213d">
+<meta name="description" content="KIPR Wombat 로봇을 한글 블록으로 코딩하고 Python으로 실행하는 웹앱">
+<meta property="og:type" content="website">
+<meta property="og:title" content="웜뱃 블록코딩 · KIPR Wombat">
+<meta property="og:description" content="KIPR Wombat 로봇을 한글 블록으로 코딩하고 Python으로 실행하는 웹앱">
+<meta property="og:image" content="assets/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -26,6 +36,7 @@
   header{height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--ink);color:#fff;position:relative;z-index:20}
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
   .brand svg{flex:none}
+  .brand .logo{flex:none;width:36px;height:36px;border-radius:9px;display:block}
   .brand h1{margin:0;font-size:18px;font-weight:900;letter-spacing:-.3px;white-space:nowrap}
   .brand small{display:block;font-size:11px;font-weight:500;color:#aab4cc;letter-spacing:.2px;margin-top:-2px}
   .proj{display:flex;align-items:center;gap:6px;margin-left:8px}
@@ -149,12 +160,7 @@
 <body>
 <header>
   <div class="brand">
-    <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">
-      <rect x="4" y="10" width="56" height="44" rx="12" fill="#f26b1d"/>
-      <rect x="11" y="17" width="42" height="24" rx="5" fill="#14213d"/>
-      <circle cx="24" cy="29" r="4" fill="#ffb703"/><circle cx="40" cy="29" r="4" fill="#ffb703"/>
-      <rect x="14" y="45" width="8" height="5" rx="2" fill="#14213d"/><rect x="28" y="45" width="8" height="5" rx="2" fill="#14213d"/><rect x="42" y="45" width="8" height="5" rx="2" fill="#14213d"/>
-    </svg>
+    <img class="logo" src="assets/brand/header-badge.png" width="36" height="36" alt="Botball">
     <div><h1>웜뱃 블록코딩</h1><small>KIPR Wombat · 블록 → Python</small></div>
   </div>
   <div class="proj"><input id="projName" value="내_웜뱃_프로그램" aria-label="프로젝트 이름" maxlength="40"></div>
